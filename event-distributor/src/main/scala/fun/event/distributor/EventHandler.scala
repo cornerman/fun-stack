@@ -1,6 +1,6 @@
-package fun.persistency.handler
+package fun.event.distributor
 
-import fun.persistency.events.Event
+import fun.event.data.Event
 
 import zio._
 import zio.console._

@@ -39,8 +39,8 @@ lazy val api = project
   .in(file("api"))
   .settings(commonSettings)
 
-lazy val persistencyEvents = project
-  .in(file("persistency-events"))
+lazy val eventData = project
+  .in(file("event-data"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -48,9 +48,19 @@ lazy val persistencyEvents = project
     )
   )
 
-lazy val persistencyHandler = project
-  .dependsOn(persistencyEvents)
-  .in(file("persistency-handler"))
+lazy val eventPersistency = project
+  .dependsOn(eventData)
+  .in(file("event-persistency"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      Deps.zio.core.value,
+    )
+  )
+
+lazy val eventDistributor = project
+  .dependsOn(eventData)
+  .in(file("event-distributor"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -59,7 +69,7 @@ lazy val persistencyHandler = project
   )
 
 lazy val webApi = project
-  .dependsOn(api, persistencyEvents)
+  .dependsOn(api, eventData)
   .in(file("web-api"))
   .settings(commonSettings)
   .settings(
@@ -101,7 +111,7 @@ lazy val root = project
   .settings(
     skip in publish := true,
   )
-  .aggregate(api, persistencyEvents, persistencyHandler, webApi, webClient)
+  .aggregate(api, eventData, eventPersistency, eventDistributor, webApi, webClient)
 
 
 // hot reloading configuration:

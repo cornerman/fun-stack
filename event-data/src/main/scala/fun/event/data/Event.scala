@@ -1,4 +1,4 @@
-package fun.persistency.events
+package fun.event.data
 
 sealed trait Event
 object Event {

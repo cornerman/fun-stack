@@ -1,7 +1,7 @@
 package fun.web.api
 
 import fun.web.api.data.Command
-import fun.persistency.events.Event
+import fun.event.data.Event
 
 import zio._
 import zio.console._

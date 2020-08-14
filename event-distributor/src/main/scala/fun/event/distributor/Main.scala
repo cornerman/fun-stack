@@ -1,4 +1,4 @@
-package fun.persistency.handler
+package fun.event.distributor
 
 import zio._
 
