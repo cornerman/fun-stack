@@ -11,11 +11,6 @@ import java.nio.ByteBuffer
 import boopickle.Default._
 import chameleon.ext.boopickle._
 
-import scala.scalajs.js
-import scala.scalajs.js.typedarray._
-import scala.scalajs.js.typedarray.TypedArrayBufferOps._
-import org.scalajs.dom.experimental.{Fetch, RequestInit, HttpMethod, BodyInit, ReadableStreamReader}
-
 object WebClient {
   private val client = Client[ByteBuffer, ApiResult, ApiError](WebTransport)
 
@@ -23,10 +18,15 @@ object WebClient {
 }
 
 private object WebTransport extends RequestTransport[ByteBuffer, ApiResult] {
+  import scala.scalajs.js
+  import scala.scalajs.js.typedarray._
+  import scala.scalajs.js.typedarray.TypedArrayBufferOps._
+  import org.scalajs.dom.experimental.{Fetch, RequestInit, HttpMethod, BodyInit, ReadableStreamReader}
+
   private val baseUrl = "http://localhost:8080"
 
   def apply(request: Request[ByteBuffer]): ApiResult[ByteBuffer] =
-    makeRequest(request).mapError(e => ApiError.RequestFailed(e))
+    makeRequest(request).mapError(ApiError.RequestFailed(_))
 
   private def makeRequest(request: Request[ByteBuffer]): Task[ByteBuffer] =
     for {

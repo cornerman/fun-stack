@@ -4,8 +4,6 @@ import sbt._
 object Deps {
   import Def.{ setting => dep }
 
-  val silencerVersion = "1.4.2"
-
   // testing
   val scalatest = dep("org.scalatest" %%% "scalatest" % "3.2.0")
 
@@ -23,13 +21,15 @@ object Deps {
 
   // rpc
   val sloth = dep("com.github.cornerman" %%% "sloth" % "0.3.0")
+
+  // web server
   val http4s = new {
     private[this] val version = "1.0.0-M3"
     val server = dep("org.http4s" %% "http4s-blaze-server" % version)
     val dsl = dep("org.http4s" %% "http4s-dsl" % version)
   }
 
-  // webApp
+  // web app
   val outwatch = new {
     private[this] val version = "61deece"
     val core = dep("com.github.outwatch.outwatch" %%% "outwatch" % version)
