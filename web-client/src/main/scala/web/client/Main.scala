@@ -1,17 +1,21 @@
 package fun.web.client
 
 import zio._
+import zio.interop.catz._
+
+import outwatch.OutWatch
 
 object Main extends App {
 
   def run(args: List[String]) = {
-    println("hallo")
     appLogic
       // .provideCustomLayer(appLayer)
       .exitCode
   }
 
-  // private[this] val appLayer =
+  // private val appLayer =
 
-  private[this] val appLogic = ZIO.succeed(())
+  private val appLogic = for {
+    _ <- OutWatch.renderInto[Task]("#app", Web.root)
+  } yield ()
 }

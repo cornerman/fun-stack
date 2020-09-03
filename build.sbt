@@ -26,13 +26,26 @@ lazy val commonSettings = Seq(
   scalacOptions in (Compile, console) ~= (_.diff(badConsoleFlags))
 )
 
+// when running the "dev" alias, after every fastOptJS compile all artifacts are copied into
+// a folder which is served and watched by the webpack devserver.
+// this is a workaround for: https://github.com/scalacenter/scalajs-bundler/issues/180
+lazy val copyFastOptJS = TaskKey[Unit]("copyFastOptJS", "Copy javascript files to target directory")
 lazy val jsSettings = Seq(
   useYarn := true,
 
   requireJsDomEnv in Test := true,
   scalaJSUseMainModuleInitializer := true,
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
-  scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) }
+  scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
+
+  webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
+
+  copyFastOptJS := {
+    val inDir = (crossTarget in (Compile, fastOptJS)).value
+    val outDir = (crossTarget in (Compile, fastOptJS)).value / "dev"
+    val files = Seq(name.value.toLowerCase + "-fastopt-loader.js", name.value.toLowerCase + "-fastopt-library.js", name.value.toLowerCase + "-fastopt.js") map { p => (inDir / p, outDir / p) }
+    IO.copy(files, overwrite = true, preserveLastModified = true, preserveExecutable = true)
+  }
 )
 
 lazy val api = project
@@ -117,15 +130,4 @@ lazy val root = project
 // hot reloading configuration:
 // https://github.com/scalacenter/scalajs-bundler/issues/180
 addCommandAlias("dev", "; webClient/compile; webClient/fastOptJS::startWebpackDevServer; devwatch; webClient/fastOptJS::stopWebpackDevServer")
-addCommandAlias("devwatch", "~; webClient/fastOptJS; copyFastOptJS")
-
-// when running the "dev" alias, after every fastOptJS compile all artifacts are copied into
-// a folder which is served and watched by the webpack devserver.
-// this is a workaround for: https://github.com/scalacenter/scalajs-bundler/issues/180
-lazy val copyFastOptJS = TaskKey[Unit]("copyFastOptJS", "Copy javascript files to target directory")
-copyFastOptJS := {
-  val inDir = (crossTarget in (Compile, fastOptJS)).value
-  val outDir = (crossTarget in (Compile, fastOptJS)).value / "dev"
-  val files = Seq(name.value.toLowerCase + "-fastopt-loader.js", name.value.toLowerCase + "-fastopt.js") map { p => (inDir / p, outDir / p) }
-  IO.copy(files, overwrite = true, preserveLastModified = true, preserveExecutable = true)
-}
+addCommandAlias("devwatch", "~; webClient/fastOptJS; webClient/copyFastOptJS")
