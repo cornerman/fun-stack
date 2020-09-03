@@ -11,7 +11,7 @@ import java.nio.ByteBuffer
 import boopickle.Default._
 import chameleon.ext.boopickle._
 
-object WebClient {
+object HttpClient {
   private val client = Client[ByteBuffer, ApiResult, ApiError](WebTransport)
 
   val api = client.wire[Api[ApiResult]]
