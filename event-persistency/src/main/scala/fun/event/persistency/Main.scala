@@ -3,11 +3,10 @@ package fun.event.persistency
 import zio._
 
 object Main extends App {
-  def run(args: List[String]) = {
+  def run(args: List[String]) =
     appLogic
       // .provideCustomLayer(appLayer)
       .exitCode
-  }
 
   // private[this] val appLayer =
 

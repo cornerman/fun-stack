@@ -1,21 +1,23 @@
 package fun.web.client
 
 import zio._
-import zio.interop.catz._
-
-import outwatch.OutWatch
+import zio.console._
 
 object Main extends App {
 
   def run(args: List[String]) = {
     appLogic
-      // .provideCustomLayer(appLayer)
+      .provideCustomLayer(appLayer)
       .exitCode
   }
 
-  // private val appLayer =
+  private val appLayer =
+    ZLayer.succeed[Api_](HttpClient.api)
 
   private val appLogic = for {
-    _ <- OutWatch.renderInto[Task]("#app", Web.root)
+    _ <- putStrLn("Hallos")
+    state <- ZIO.accessM[Has[Api_]](env => env.get[Api_].getState.mapError(err => new Exception(err.toString)))
+    _ <- putStrLn("DONE"  + state)
+    _ <- Web.render
   } yield ()
 }

@@ -11,6 +11,7 @@ import org.http4s.{Method, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.blaze._
+import org.http4s.server.middleware._
 
 import zio._
 import zio.interop.catz._
@@ -18,6 +19,7 @@ import zio.interop.catz.implicits._
 import zio.console._
 
 import scala.util.control.{NoStackTrace, NonFatal}
+import scala.concurrent.duration._
 
 case class ServerConfig(interface: String, port: Int)
 object ServerConfig {
@@ -26,6 +28,13 @@ object ServerConfig {
 
 object Server {
 
+  private val corsConfig = CORSConfig(
+    anyOrigin = true,
+    anyMethod = false,
+    allowedMethods = Some(Set("GET", "POST")),
+    allowCredentials = false,
+    maxAge = 1.day.toSeconds)
+
   private val server = ZIO.runtime[Any].flatMap { implicit rts =>
     for {
       service <- ApiService.service
@@ -33,7 +42,7 @@ object Server {
         val config = env.get[ServerConfig]
         BlazeServerBuilder[Task](scala.concurrent.ExecutionContext.global)
           .bindHttp(config.port, config.interface)
-          .withHttpApp(service)
+          .withHttpApp(CORS(service, corsConfig))
           .serve
           .compile
           .drain

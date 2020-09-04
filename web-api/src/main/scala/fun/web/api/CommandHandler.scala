@@ -7,7 +7,7 @@ import zio._
 import zio.console._
 
 trait CommandHandler {
-  def send(cmd: Command): URIO[ZEnv, Unit]
+  def send(cmd: Command): URIO[ZEnv, Boolean]
 }
 
 object CommandHandlerLive extends CommandHandler {
@@ -16,9 +16,14 @@ object CommandHandlerLive extends CommandHandler {
     _ <- putStrLn(s"Handle command: $cmd")
     event = commandToEvent(cmd)
     _ <- putStrLn(s"Transformed to event: $event")
-  } yield ()
+    success <- sendEvent(event)
+  } yield success
 
   private[this] val commandToEvent: Command => Event = {
     case Command.IncrementValue => Event.IncrementValue
+  }
+
+  private[this] def sendEvent(event: Event) = {
+    ZIO.succeed(true)
   }
 }

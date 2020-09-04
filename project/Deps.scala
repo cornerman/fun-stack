@@ -12,8 +12,8 @@ object Deps {
     val core = dep("org.typelevel" %%% "cats-core" % "2.1.1")
   }
   val zio = new {
-    val core = dep("dev.zio" %%% "zio" % "1.0.0")
-    val cats = dep("dev.zio" %%% "zio-interop-cats" % "2.1.4.0-RC17")
+    val core = dep("dev.zio" %%% "zio" % "1.0.1")
+    val cats = dep("dev.zio" %%% "zio-interop-cats" % "2.1.4.0")
   }
 
   // serialization

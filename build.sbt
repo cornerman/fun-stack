@@ -4,9 +4,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 inThisBuild(Seq(
   version := "0.1.0-SNAPSHOT",
 
-  crossScalaVersions := Seq("2.12.10", "2.13.1"),
-
-  scalaVersion := crossScalaVersions.value.last,
+  scalaVersion := "2.13.1"
 ))
 
 lazy val commonSettings = Seq(
@@ -26,10 +24,6 @@ lazy val commonSettings = Seq(
   scalacOptions in (Compile, console) ~= (_.diff(badConsoleFlags))
 )
 
-// when running the "dev" alias, after every fastOptJS compile all artifacts are copied into
-// a folder which is served and watched by the webpack devserver.
-// this is a workaround for: https://github.com/scalacenter/scalajs-bundler/issues/180
-lazy val copyFastOptJS = TaskKey[Unit]("copyFastOptJS", "Copy javascript files to target directory")
 lazy val jsSettings = Seq(
   useYarn := true,
 
@@ -37,18 +31,31 @@ lazy val jsSettings = Seq(
   scalaJSUseMainModuleInitializer := true,
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
   scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
+)
+
+// when running the "dev" alias, after every fastOptJS compile all artifacts are copied into
+// a folder which is served and watched by the webpack devserver.
+// this is a workaround for: https://github.com/scalacenter/scalajs-bundler/issues/180
+lazy val copyFastOptJS = TaskKey[Unit]("copyFastOptJS", "Copy javascript files to target directory")
+lazy val webSettings = Seq(
+  version in webpack := "4.43.0",
+  version in startWebpackDevServer := "3.11.0",
+  webpackDevServerExtraArgs := Seq("--progress", "--color"),
+  webpackDevServerPort := 12345,
+  webpackConfigFile in fastOptJS := Some(baseDirectory.value / "webpack.config.dev.js"),
 
   webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
 
   copyFastOptJS := {
     val inDir = (crossTarget in (Compile, fastOptJS)).value
-    val outDir = (crossTarget in (Compile, fastOptJS)).value / "dev"
+    val outDir = inDir / "dev"
     val files = Seq(name.value.toLowerCase + "-fastopt-loader.js", name.value.toLowerCase + "-fastopt-library.js", name.value.toLowerCase + "-fastopt.js") map { p => (inDir / p, outDir / p) }
     IO.copy(files, overwrite = true, preserveLastModified = true, preserveExecutable = true)
   }
 )
 
-lazy val api = project
+lazy val api = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
   .in(file("api"))
   .settings(commonSettings)
 
@@ -82,7 +89,7 @@ lazy val eventDistributor = project
   )
 
 lazy val webApi = project
-  .dependsOn(api, eventData)
+  .dependsOn(api.jvm, eventData)
   .in(file("web-api"))
   .settings(commonSettings)
   .settings(
@@ -98,22 +105,14 @@ lazy val webApi = project
 
 lazy val webClient = project
   .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin)
-  .dependsOn(api)
+  .dependsOn(api.js)
   .in(file("web-client"))
-  .settings(commonSettings, jsSettings)
+  .settings(commonSettings, jsSettings, webSettings)
   .settings(
-    version in webpack := "4.43.0",
-    version in startWebpackDevServer := "3.11.0",
-    webpackDevServerExtraArgs := Seq("--progress", "--color"),
-    webpackDevServerPort := 12345,
-    webpackConfigFile in fastOptJS := Some(baseDirectory.value / "webpack.config.dev.js"),
-
-    libraryDependencies += "io.github.cquiroz" %%% "scala-java-time" % "2.0.0",
-
     libraryDependencies ++= Seq(
+      Deps.sloth.value,
       Deps.zio.core.value,
       Deps.zio.cats.value,
-      Deps.sloth.value,
       Deps.boopickle.value,
       Deps.outwatch.core.value,
     )
@@ -124,10 +123,15 @@ lazy val root = project
   .settings(
     skip in publish := true,
   )
-  .aggregate(api, eventData, eventPersistency, eventDistributor, webApi, webClient)
+  .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, webClient)
 
 
-// hot reloading configuration:
-// https://github.com/scalacenter/scalajs-bundler/issues/180
-addCommandAlias("dev", "; webClient/compile; webClient/fastOptJS::startWebpackDevServer; devwatch; webClient/fastOptJS::stopWebpackDevServer")
-addCommandAlias("devwatch", "~; webClient/fastOptJS; webClient/copyFastOptJS")
+// dev command with hot reload
+addCommandAlias("dev", "; devInit; devWatchAll; devDestroy") // watch all
+addCommandAlias("devf", "; devInit; devWatchClient; devDestroy") // only watch frontend
+addCommandAlias("devb", "; devInit; devWatchApi; devDestroy") // only watch backend
+addCommandAlias("devInit", "~; webApi/reStart; webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer; webClient/copyFastOptJS")
+addCommandAlias("devWatchAll", "~; webApi/reStart; webClient/fastOptJS; webClient/copyFastOptJS")
+addCommandAlias("devWatchClient", "~; webClient/fastOptJS; webClient/copyFastOptJS")
+addCommandAlias("devWatchApi", "~; webApi/reStart")
+addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer; webApi/reStop")

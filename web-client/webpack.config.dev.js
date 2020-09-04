@@ -9,6 +9,7 @@ module.exports.devServer = {
            Path.resolve(__dirname, 'dev'), // fastOptJS output
            Path.resolve(rootDir, 'assets') // project root containing index.html
     ],
+    allowedHosts: [ ".localhost" ],
     watchContentBase: true,
     hot: false,
     hotOnly: false, // only reload when build is successful

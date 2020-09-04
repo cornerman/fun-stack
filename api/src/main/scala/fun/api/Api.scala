@@ -1,6 +1,6 @@
 package fun.api
 
 trait Api[F[_]] {
-  def get: F[Int]
-  def increment: F[Unit]
+  def getState: F[Int]
+  def incrementValue: F[Unit]
 }
