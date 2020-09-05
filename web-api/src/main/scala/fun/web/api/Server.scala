@@ -7,7 +7,7 @@ import java.nio.ByteBuffer
 import boopickle.Default._
 import chameleon.ext.boopickle._
 
-import org.http4s.{Method, HttpRoutes}
+import org.http4s.{Method, HttpRoutes, EntityDecoder, MediaType}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.http4s.server.blaze._
@@ -76,32 +76,38 @@ private object ApiService {
     val router = Router[ByteBuffer, ApiResult]
       .route[Api[ApiResult]](env.get[Api[ApiResult]])
 
+    val requestDecoder = EntityDecoder.decodeBy[Task, ByteBuffer](MediaType.application.`octet-stream`) { m =>
+      EntityDecoder.collectBinary(m).map(chunk => ByteBuffer.wrap(chunk.toArray))
+    }
+
     ZIO.succeed(HttpRoutes.of[Task] { case request if request.method == Method.POST =>
       val path = request.pathInfo.segments.map(s => s.encoded).toList
-      val result = router(Request(path, null))
 
-      result match {
-        case RouterResult.Success(_, result) =>
-          val response = result
-            .provide(env)
-            .map(_.serialized.array)
-            .mapError(ApiThrowable(_))
+      requestDecoder.decode(request, strict = false).value.flatMap {
+        case Right(bytes) =>
+          router(Request(path, bytes)) match {
+            case RouterResult.Success(_, result) =>
+              val response = result
+                .provide(env)
+                .map(_.serialized.array)
+                .mapError(ApiThrowable(_))
 
-          Ok(response).catchSome {
-            case ApiThrowable(err) => err match {
-              case ApiError.Internal => InternalServerError()
-            }
-            case NonFatal(_) => InternalServerError()
+              Ok(response).catchSome {
+                case ApiThrowable(err) => err match {
+                  case ApiError.Internal => InternalServerError()
+                }
+                case NonFatal(_) => InternalServerError()
+              }
+
+            case RouterResult.Failure(_, result) =>
+              result match {
+                case ServerFailure.PathNotFound(_) => NotFound()
+                case ServerFailure.DeserializerError(_) => BadRequest()
+                case ServerFailure.HandlerError(_) => InternalServerError()
+              }
           }
-
-        case RouterResult.Failure(_, result) =>
-          result match {
-            case ServerFailure.PathNotFound(_) => NotFound()
-            case ServerFailure.DeserializerError(_) => BadRequest()
-            case ServerFailure.HandlerError(_) => InternalServerError()
-          }
+        case Left(_) => BadRequest()
       }
     }.orNotFound)
   }
-
 }

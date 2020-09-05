@@ -26,7 +26,7 @@ object JsRequest {
 
   private def readBytes(reader: ReadableStreamReader[Uint8Array])(implicit ec: ExecutionContext): Future[List[ByteBuffer]] =
     reader.read().toFuture.flatMap { chunk =>
-      if (js.typeOf(chunk) != "undefined") Future.successful(Nil)
+      if (js.typeOf(chunk.value) == "undefined") Future.successful(Nil)
       else {
         val buffer = TypedArrayBuffer.wrap(chunk.value.buffer)
         if (chunk.done) Future.successful(buffer :: Nil)
@@ -37,6 +37,7 @@ object JsRequest {
   private def combineByteBuffers(buffers: List[ByteBuffer]): ByteBuffer = {
     val result = ByteBuffer.allocate(buffers.map(_.limit()).sum);
     buffers.foreach(result.put)
+    result.rewind()
     result
   }
 }
