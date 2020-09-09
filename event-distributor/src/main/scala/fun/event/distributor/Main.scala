@@ -8,9 +8,9 @@ object Main extends App {
       // .provideCustomLayer(appLayer)
       .exitCode
 
-  // private[this] val appLayer =
+  // private val appLayer =
 
-  private[this] val appLogic =
+  private val appLogic =
     for {
       _ <- EventHandler.run
     } yield ()

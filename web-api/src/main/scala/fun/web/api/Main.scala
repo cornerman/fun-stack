@@ -10,13 +10,13 @@ object Main extends App {
       .provideCustomLayer(appLayer)
       .exitCode
 
-  private[this] val appLayer =
+  private val appLayer =
     ZLayer.succeed(ServerConfig.default) ++
     ZLayer.succeed[CommandHandler](CommandHandlerLive) ++
     ZLayer.succeed[Database](DatabaseLive) ++
     ZLayer.succeed[Api_](ApiLive)
 
-  private[this] val appLogic =
+  private val appLogic =
     for {
       _ <- Server.run
     } yield ()

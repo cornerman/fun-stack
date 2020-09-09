@@ -12,7 +12,7 @@ object EventHandler {
       _ <- onEvent(Event.IncrementValue)
     } yield ()
 
-  private[this] def onEvent(event: Event) = event match {
+  private def onEvent(event: Event) = event match {
     case Event.IncrementValue => ZIO.succeed(())
   }
 }

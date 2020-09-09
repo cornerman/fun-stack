@@ -16,7 +16,5 @@ object Main extends App {
 
   private val appLogic = for {
     _ <- Web.render
-    state <- ZIO.accessM[Has[Api_]](env => env.get[Api_].getState.mapError(err => new Exception(err.toString)))
-    _ <- putStrLn("DONE"  + state)
   } yield ()
 }

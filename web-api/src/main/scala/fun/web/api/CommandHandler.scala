@@ -19,11 +19,11 @@ object CommandHandlerLive extends CommandHandler {
     success <- sendEvent(event)
   } yield success
 
-  private[this] val commandToEvent: Command => Event = {
+  private val commandToEvent: Command => Event = {
     case Command.IncrementValue => Event.IncrementValue
   }
 
-  private[this] def sendEvent(event: Event) = {
+  private def sendEvent(event: Event) = {
     ZIO.succeed(true)
   }
 }

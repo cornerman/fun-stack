@@ -2,23 +2,16 @@ package fun.web.api
 
 import fun.api.Api
 
-import sloth._
-import java.nio.ByteBuffer
-import boopickle.Default._
-import chameleon.ext.boopickle._
-
-import org.http4s.{Method, HttpRoutes, EntityDecoder, MediaType}
-import org.http4s.dsl.Http4sDsl
-import org.http4s.implicits._
-import org.http4s.server.blaze._
-import org.http4s.server.middleware._
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.middleware.{GZip, CORS, CORSConfig}
 
 import zio._
 import zio.interop.catz._
 import zio.interop.catz.implicits._
 import zio.console._
 
-import scala.util.control.{NoStackTrace, NonFatal}
+import java.util.concurrent.ForkJoinPool
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 case class ServerConfig(interface: String, port: Int)
@@ -40,9 +33,9 @@ object Server {
       service <- ApiService.service
       _ <- ZIO.accessM[Has[ServerConfig]] { env =>
         val config = env.get[ServerConfig]
-        BlazeServerBuilder[Task](scala.concurrent.ExecutionContext.global)
+        BlazeServerBuilder[Task](ExecutionContext.fromExecutor(new ForkJoinPool))
           .bindHttp(config.port, config.interface)
-          .withHttpApp(CORS(service, corsConfig))
+          .withHttpApp(CORS(GZip(service), corsConfig))
           .serve
           .compile
           .drain
@@ -61,53 +54,5 @@ object Server {
       _ <- server.orDie
       _ <- putStrLn("Stopping Server")
     } yield ()
-  }
-}
-
-private object ApiService {
-
-  private case class ApiThrowable(error: ApiError) extends NoStackTrace
-
-  private val dsl = Http4sDsl[Task]
-  import dsl._
-
-  val service = ZIO.accessM[Has[Api[ApiResult]] with ApiEnv] { env =>
-
-    val router = Router[ByteBuffer, ApiResult]
-      .route[Api[ApiResult]](env.get[Api[ApiResult]])
-
-    val requestDecoder = EntityDecoder.decodeBy[Task, ByteBuffer](MediaType.application.`octet-stream`) { m =>
-      EntityDecoder.collectBinary(m).map(chunk => ByteBuffer.wrap(chunk.toArray))
-    }
-
-    ZIO.succeed(HttpRoutes.of[Task] { case request if request.method == Method.POST =>
-      val path = request.pathInfo.segments.map(s => s.encoded).toList
-
-      requestDecoder.decode(request, strict = false).value.flatMap {
-        case Right(bytes) =>
-          router(Request(path, bytes)) match {
-            case RouterResult.Success(_, result) =>
-              val response = result
-                .provide(env)
-                .map(_.serialized.array)
-                .mapError(ApiThrowable(_))
-
-              Ok(response).catchSome {
-                case ApiThrowable(err) => err match {
-                  case ApiError.Internal => InternalServerError()
-                }
-                case NonFatal(_) => InternalServerError()
-              }
-
-            case RouterResult.Failure(_, result) =>
-              result match {
-                case ServerFailure.PathNotFound(_) => NotFound()
-                case ServerFailure.DeserializerError(_) => BadRequest()
-                case ServerFailure.HandlerError(_) => InternalServerError()
-              }
-          }
-        case Left(_) => BadRequest()
-      }
-    }.orNotFound)
   }
 }

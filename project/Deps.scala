@@ -24,14 +24,14 @@ object Deps {
 
   // web server
   val http4s = new {
-    private[this] val version = "1.0.0-M3"
+    private val version = "1.0.0-M3"
     val server = dep("org.http4s" %% "http4s-blaze-server" % version)
     val dsl = dep("org.http4s" %% "http4s-dsl" % version)
   }
 
   // web app
   val outwatch = new {
-    private[this] val version = "61deece"
-    val core = dep("com.github.outwatch.outwatch" %%% "outwatch" % version)
+    private val version = "4ebad632"
+    val core = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
   }
 }
