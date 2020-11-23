@@ -115,6 +115,7 @@ lazy val webClient = project
       Deps.zio.cats.value,
       Deps.boopickle.value,
       Deps.outwatch.core.value,
+      Deps.outwatch.zio.value,
     )
   )
 

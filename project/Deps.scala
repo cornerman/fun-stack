@@ -31,7 +31,8 @@ object Deps {
 
   // web app
   val outwatch = new {
-    private val version = "4ebad632"
+    private val version = "bd477715"
     val core = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
+    val zio = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
 }
