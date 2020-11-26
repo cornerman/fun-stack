@@ -12,7 +12,7 @@ object Deps {
     val core = dep("org.typelevel" %%% "cats-core" % "2.1.1")
   }
   val zio = new {
-    val core = dep("dev.zio" %%% "zio" % "1.0.1")
+    val core = dep("dev.zio" %%% "zio" % "1.0.3")
     val cats = dep("dev.zio" %%% "zio-interop-cats" % "2.1.4.0")
   }
 
@@ -35,4 +35,11 @@ object Deps {
     val core = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
     val zio = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
+}
+
+object NpmDeps {
+  val webpackDependencies =
+    "copy-webpack-plugin" -> "5.0.0" ::
+    "clean-webpack-plugin" -> "1.0.1" ::
+    Nil
 }

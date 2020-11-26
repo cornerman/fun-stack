@@ -7,7 +7,6 @@ import zio.ZIO
 
 object ApiLive extends Api[ApiResult] {
   def getState: ApiResult[Int] = ZIO.accessM { env =>
-    Thread.sleep(1000)
     for {
       state <- env.get[Database].getState
     } yield state.value

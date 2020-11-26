@@ -2,8 +2,6 @@ package fun.web.client.helpers
 
 import fun.api.Api
 
-import sloth._
-
 import java.nio.ByteBuffer
 import scala.concurrent.{Future, ExecutionContext}
 

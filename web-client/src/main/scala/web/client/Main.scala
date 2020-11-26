@@ -20,3 +20,4 @@ object Main extends App {
     _ <- Web.render
   } yield ()
 }
+

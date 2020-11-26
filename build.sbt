@@ -14,9 +14,9 @@ lazy val commonSettings = Seq(
     ("jitpack" at "https://jitpack.io") ::
     Nil,
 
-  libraryDependencies ++= Seq(
-    "org.scalatest" %%% "scalatest" % "3.2.0" % Test,
-  ),
+  libraryDependencies ++=
+    "org.scalatest" %%% "scalatest" % "3.2.0" % Test ::
+    Nil,
 
   scalacOptions ++= CrossVersion.partialVersion(scalaVersion.value).map(v =>
     allOptionsForVersion(s"${v._1}.${v._2}", true)
@@ -33,25 +33,18 @@ lazy val jsSettings = Seq(
   scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
 )
 
-// when running the "dev" alias, after every fastOptJS compile all artifacts are copied into
-// a folder which is served and watched by the webpack devserver.
-// this is a workaround for: https://github.com/scalacenter/scalajs-bundler/issues/180
-lazy val copyFastOptJS = TaskKey[Unit]("copyFastOptJS", "Copy javascript files to target directory")
+lazy val localeSettings = Seq(
+  zonesFilter := {(z: String) => false},
+)
+
 lazy val webSettings = Seq(
   version in webpack := "4.43.0",
   version in startWebpackDevServer := "3.11.0",
   webpackDevServerExtraArgs := Seq("--progress", "--color"),
   webpackDevServerPort := 12345,
   webpackConfigFile in fastOptJS := Some(baseDirectory.value / "webpack.config.dev.js"),
-
+  npmDevDependencies in Compile ++= NpmDeps.webpackDependencies,
   webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
-
-  copyFastOptJS := {
-    val inDir = (crossTarget in (Compile, fastOptJS)).value
-    val outDir = inDir / "dev"
-    val files = Seq(name.value.toLowerCase + "-fastopt-loader.js", name.value.toLowerCase + "-fastopt-library.js", name.value.toLowerCase + "-fastopt.js") map { p => (inDir / p, outDir / p) }
-    IO.copy(files, overwrite = true, preserveLastModified = true, preserveExecutable = true)
-  }
 )
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
@@ -63,9 +56,9 @@ lazy val eventData = project
   .in(file("event-data"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      Deps.zio.core.value,
-    )
+    libraryDependencies ++=
+      Deps.zio.core.value ::
+      Nil
   )
 
 lazy val eventPersistency = project
@@ -73,9 +66,9 @@ lazy val eventPersistency = project
   .in(file("event-persistency"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      Deps.zio.core.value,
-    )
+    libraryDependencies ++=
+      Deps.zio.core.value ::
+      Nil
   )
 
 lazy val eventDistributor = project
@@ -83,9 +76,9 @@ lazy val eventDistributor = project
   .in(file("event-distributor"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      Deps.zio.core.value,
-    )
+    libraryDependencies ++=
+      Deps.zio.core.value ::
+      Nil
   )
 
 lazy val webApi = project
@@ -93,30 +86,29 @@ lazy val webApi = project
   .in(file("web-api"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      Deps.sloth.value,
-      Deps.zio.core.value,
-      Deps.zio.cats.value,
-      Deps.http4s.server.value,
-      Deps.http4s.dsl.value,
-      Deps.boopickle.value,
-    )
+    libraryDependencies ++=
+      Deps.sloth.value ::
+      Deps.zio.core.value ::
+      Deps.zio.cats.value ::
+      Deps.http4s.server.value ::
+      Deps.http4s.dsl.value ::
+      Deps.boopickle.value ::
+      Nil
   )
 
 lazy val webClient = project
-  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin)
+  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin, LocalesPlugin, TzdbPlugin)
   .dependsOn(api.js)
   .in(file("web-client"))
-  .settings(commonSettings, jsSettings, webSettings)
+  .settings(commonSettings, jsSettings, localeSettings, webSettings)
   .settings(
-    libraryDependencies ++= Seq(
-      Deps.sloth.value,
-      Deps.zio.core.value,
-      Deps.zio.cats.value,
-      Deps.boopickle.value,
-      Deps.outwatch.core.value,
-      Deps.outwatch.zio.value,
-    )
+    libraryDependencies ++=
+      Deps.sloth.value ::
+      Deps.zio.core.value ::
+      Deps.boopickle.value ::
+      Deps.outwatch.core.value ::
+      Deps.outwatch.zio.value ::
+      Nil
   )
 
 lazy val root = project
@@ -127,12 +119,11 @@ lazy val root = project
   .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, webClient)
 
 
-// dev command with hot reload
-addCommandAlias("dev", "; devInit; devWatchAll; devDestroy") // watch all
-addCommandAlias("devf", "; devInit; devWatchClient; devDestroy") // only watch frontend
-addCommandAlias("devb", "; devInit; devWatchApi; devDestroy") // only watch backend
-addCommandAlias("devInit", "~; webApi/reStart; webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer; webClient/copyFastOptJS")
-addCommandAlias("devWatchAll", "~; webApi/reStart; webClient/fastOptJS; webClient/copyFastOptJS")
-addCommandAlias("devWatchClient", "~; webClient/fastOptJS; webClient/copyFastOptJS")
-addCommandAlias("devWatchApi", "~; webApi/reStart")
+addCommandAlias("dev", "devInit; devWatchAll; devDestroy") // watch all
+addCommandAlias("devf", "devInit; devWatchClient; devDestroy") // only watch frontend
+addCommandAlias("deva", "devInit; devWatchApi; devDestroy") // only watch backend
+addCommandAlias("devInit", "webApi/reStart; webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")
+addCommandAlias("devWatchAll", "~; webApi/reStart; webClient/fastOptJS::webpack")
+addCommandAlias("devWatchClient", "~webClient/fastOptJS::webpack")
+addCommandAlias("devWatchApi", "~webApi/reStart")
 addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer; webApi/reStop")

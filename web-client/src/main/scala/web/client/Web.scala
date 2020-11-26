@@ -15,14 +15,12 @@ object Web {
 object Component {
   import outwatch.dsl._
 
+  val requestState = ZIO.accessM[WebEnv](_.get[Api_].getState)
+
   val getState: ModifierM[WebEnv] = div(
-    input(
-      value.useAccess[WebEnv] <-- ZIO.succeed((s:WebEnv) => s.toString)
-    ),
     button(
-      "Get State",
-      onClick.useAccess[WebEnv].mapZIOSingleOrDrop(_.get[Api_].getState.either).foreach(s => println("GOT " + s)),
-      onClick.useZIOSingleOrDrop(RIO.accessM[WebEnv](_.get[Api_].getState.either)).foreach(s => println("GOT " + s))
+      "Get States",
+      onClick.useZIOSingleOrDrop(requestState.either).foreach(s => println("GOT " + s)),
     )
   )
 

@@ -1,17 +1,39 @@
-var webpack = require('webpack');
+const webpack = require('webpack');
+const Path = require('path');
+const CopyPlugin = require("copy-webpack-plugin");
+const CleanPlugin = require("clean-webpack-plugin");
+
+const rootDir = Path.resolve(__dirname, '../../../..');
+const devDir = Path.join(__dirname, "dev");
+const assetsDir = Path.join(rootDir, "assets");
+
+const staticCopyFiles = [
+  Path.join(__dirname, 'webclient-fastopt.js'),
+  Path.join(__dirname, 'webclient-fastopt.js.map'),
+  Path.join(__dirname, 'webclient-fastopt-loader.js')
+];
 
 module.exports = require('./scalajs.webpack.config');
 
-const Path = require('path');
-const rootDir = Path.resolve(__dirname, '../../../..');
+module.exports.plugins = [
+  // new CleanPlugin(devDir),
+  new CopyPlugin(staticCopyFiles.map(f => { return { "from": f, "context": Path.dirname(f), "to": '', "force": true} }))
+];
+
+module.exports.output.path = devDir;
+
 module.exports.devServer = {
-    contentBase: [
-           Path.resolve(__dirname, 'dev'), // fastOptJS output
-           Path.resolve(rootDir, 'assets') // project root containing index.html
-    ],
-    allowedHosts: [ ".localhost" ],
-    watchContentBase: true,
-    hot: false,
-    hotOnly: false, // only reload when build is successful
-    inline: true // live reloading
+  contentBase: [
+    devDir,
+    assetsDir
+  ],
+  allowedHosts: [ ".localhost" ],
+  watchContentBase: true,
+  watchOptions: {
+    ignored: f => f.endsWith(".tmp")
+  },
+  // writeToDisk: true,
+  hot: false,
+  hotOnly: false,
+  inline: true
 };
