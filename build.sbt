@@ -4,7 +4,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 inThisBuild(Seq(
   version := "0.1.0-SNAPSHOT",
 
-  scalaVersion := "2.13.1"
+  scalaVersion := "2.13.3"
 ))
 
 lazy val commonSettings = Seq(
@@ -26,7 +26,6 @@ lazy val commonSettings = Seq(
 
 lazy val jsSettings = Seq(
   useYarn := true,
-
   requireJsDomEnv in Test := true,
   scalaJSUseMainModuleInitializer := true,
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },

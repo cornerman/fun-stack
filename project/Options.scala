@@ -66,6 +66,7 @@ object Options {
     "-Ywarn-infer-any",
     "-Ywarn-nullary-override",
     "-Ywarn-nullary-unit",
+    "-Xlint:nullary-override",
     "-Xlint:by-name-right-associative",
     "-Xlint:unsound-match",
     "-Xfuture",
