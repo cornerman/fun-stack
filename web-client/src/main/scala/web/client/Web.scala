@@ -1,5 +1,7 @@
 package fun.web.client
 
+import fun.api.Command
+
 import zio._
 import zio.interop.catz._
 
@@ -16,12 +18,25 @@ object Component {
   import outwatch.dsl._
 
   val requestState = ZIO.accessM[WebEnv](_.get[Api_].getState)
+  val incrementState = ZIO.accessM[WebEnv](_.get[Api_].sendCommand(Command.IncrementValue))
 
   val getState: ModifierM[WebEnv] = div(
+
     button(
-      "Get States",
-      onClick.useZIOSingleOrDrop(requestState.either).foreach(s => println("GOT " + s)),
+      "Increment",
+      onClick.useZIOSingleOrDrop(incrementState.either).discard,
+    ),
+
+    button(
+      "Get State",
+      onClick.useZIOSingleOrDrop(requestState.either).handled { stream =>
+        stream.map {
+          case Right(state) => state.toString
+          case Left(error) => error.toString
+        }
+      }
     )
+
   )
 
   val root = div("hello world", getState)

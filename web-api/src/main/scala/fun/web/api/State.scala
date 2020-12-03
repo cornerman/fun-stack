@@ -1,4 +1,4 @@
-package fun.web.api.data
+package fun.web.api
 
 case class State(value: Int)
 object State {

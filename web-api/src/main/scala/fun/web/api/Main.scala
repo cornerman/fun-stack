@@ -11,10 +11,9 @@ object Main extends App {
       .exitCode
 
   private val appLayer =
-    ZLayer.succeed(ServerConfig.default) ++
-    ZLayer.succeed[CommandHandler](CommandHandlerLive) ++
-    ZLayer.succeed[Database](DatabaseLive) ++
-    ZLayer.succeed[Api_](ApiLive)
+    ZLayer.succeed[ServerConfig](ServerConfig.default) ++
+    ZLayer.succeed[Api_](ApiLive) ++
+    ZLayer.fromEffect[Any, Nothing, Database](DatabaseLive.create)
 
   private val appLogic =
     for {
