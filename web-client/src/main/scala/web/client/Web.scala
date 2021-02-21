@@ -11,28 +11,26 @@ object Component {
 
   val onEnter = onKeyUp.filter(_.key == "Enter")
 
+  val stringToEvent: Observable[String] => Observable[Event] = _
+    .filter(_.nonEmpty)
+    .map[Event](string => Event.AddTodo(Todo(string)))
+
   val inputMask = ModifierM.delay {
     val currentValue = Subject.publish[String]
-    val clear = Subject.publish[Unit]
-
-    val sink: Observer[Event] => Observer[String] = _
-      .via(clear.contramap[Event](_ => ()))
-      .contramap[String](string => Event.AddTodo(Todo(string)))
-      .contrafilter(_.nonEmpty)
+    val clearValue = currentValue.contramap[Event](_ => "")
 
     div(
       input(
         placeholder := "Type Todo",
-        value <-- clear.map(_ => ""),
-        EmitterBuilder.fromSource(clear).map(_ => "") --> currentValue,
+        value <--[Observable] currentValue,
         onInput.value --> currentValue,
-        onEnter.value.transformSink(sink).dispatch
+        onEnter.value.transform(stringToEvent).dispatch,
       ),
 
       button(
         "Add Todo",
-        onClick.useLatest(currentValue).transformSink(sink).dispatch
-      )
+        onClick.useLatest(currentValue).transform(stringToEvent).dispatch,
+      ),
     )
   }
 
@@ -47,7 +45,7 @@ object Component {
       ModifierM.accessM[WebEnv](_.get[Config].todoList.map { list =>
         list.todos.map(todo => li(todoItem(todo)))
       } : ModifierM[WebEnv])
-    )
+    ),
   )
 
   val root = div(

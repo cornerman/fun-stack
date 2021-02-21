@@ -1,6 +1,5 @@
 package fun.web.client
 
-import outwatch.EventDispatcher
 import colibri._
 
 case class Todo(
