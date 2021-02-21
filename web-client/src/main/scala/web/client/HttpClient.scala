@@ -1,6 +1,6 @@
 package fun.web.client
 
-import fun.web.client.helpers.JsRequest
+import requests.JsRequestBytes
 import fun.api.Api
 
 import zio._
@@ -20,7 +20,7 @@ object HttpClient {
   val api = client.wire[Api[ApiResult]]
 }
 
-private object HttpTransport extends RequestTransport[ByteBuffer, ApiResult] {
+object HttpTransport extends RequestTransport[ByteBuffer, ApiResult] {
 
   private val baseUrl = {
     val loc = dom.window.location
@@ -29,12 +29,10 @@ private object HttpTransport extends RequestTransport[ByteBuffer, ApiResult] {
   }
 
   def apply(request: Request[ByteBuffer]): ApiResult[ByteBuffer] = {
-    println(request)
-    println(baseUrl)
     val url = baseUrl + "/" + request.path.mkString("/")
     val payload = request.payload
 
-    ZIO.fromFuture(implicit ec => JsRequest.post(url, payload))
+    ZIO.fromFuture(implicit ec => JsRequestBytes.post(url, payload))
       .mapError(ApiError.RequestFailed(_))
   }
 }

@@ -105,6 +105,7 @@ lazy val webClient = project
       Deps.sloth.value ::
       Deps.zio.core.value ::
       Deps.boopickle.value ::
+      Deps.jsrequests.value ::
       Deps.outwatch.core.value ::
       Deps.outwatch.zio.value ::
       Nil

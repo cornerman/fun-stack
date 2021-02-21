@@ -35,6 +35,9 @@ object Deps {
     val core = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
     val zio = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
+
+  // http requests in scalajs
+  val jsrequests = dep("com.github.cornerman.simple-scalajs-requests" %%% "requests" % "c35e198")
 }
 
 object NpmDeps {
