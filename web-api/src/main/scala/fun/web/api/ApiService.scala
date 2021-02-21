@@ -26,13 +26,14 @@ object ApiService {
 
   val service = ZIO.accessM[Has[Api[ApiResult]] with ApiEnv] { env =>
 
-    val router = Router[ByteBuffer, ApiResult]
-      .route[Api[ApiResult]](env.get[Api[ApiResult]])
+    val apiImpl = env.get[Api[ApiResult]]
+    val router = Router[ByteBuffer, ApiResult].route(apiImpl)
 
-    ZIO.succeed(HttpRoutes.of[Task] { case request if request.method == Method.POST =>
+    val httpRoutes = HttpRoutes.of[Task] { case request if request.method == Method.POST =>
       val path = request.pathInfo.segments.map(s => s.encoded).toList
+      val decodedRequest = requestDecoder.decode(request, strict = false)
 
-      requestDecoder.decode(request, strict = false).value.flatMap {
+      decodedRequest.value.flatMap {
         case Right(bytes) =>
           router(Request(path, bytes)) match {
             case RouterResult.Success(_, result) =>
@@ -51,6 +52,8 @@ object ApiService {
           }
         case Left(_) => BadRequest()
       }
-    }.orNotFound)
+    }
+
+    ZIO.succeed(httpRoutes.orNotFound)
   }
 }

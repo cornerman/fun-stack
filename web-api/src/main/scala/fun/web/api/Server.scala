@@ -32,7 +32,7 @@ object Server {
     for {
       service <- ApiService.service
       _ <- ZIO.accessM[Has[ServerConfig]] { env =>
-        val config = env.get[ServerConfig]
+        val config = env.get
         BlazeServerBuilder[Task](ExecutionContext.fromExecutor(new ForkJoinPool))
           .bindHttp(config.port, config.interface)
           .withHttpApp(CORS(GZip(service), corsConfig))

@@ -10,6 +10,7 @@ object ApiLive extends Api[ApiResult] {
   }
 
   def sendCommand(command: Command): ApiResult[Unit] = ZIO.accessM { env =>
-    env.get[Database].updateState(StateModifier.modifier(command))
+    val modifier = StateModifier.modifier(command)
+    env.get[Database].updateState(modifier)
   }
 }
