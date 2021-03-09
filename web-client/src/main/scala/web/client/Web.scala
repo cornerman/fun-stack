@@ -25,7 +25,7 @@ object Component {
 
   val inputMask = for {
     currentValue <- SyncIO(Subject.publish[String])
-  } yield div(
+  } yield ModifierM(
     input(
       tpe := "text",
       placeholder := "Type Todo",
