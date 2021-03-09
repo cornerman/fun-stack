@@ -1,5 +1,7 @@
 package fun.web.client
 
+import fun.web.client.data._
+
 import zio._
 import zio.console._
 import zio.internal.Platform
@@ -10,19 +12,19 @@ import outwatch.{Outwatch, EventDispatcher}
 
 object Main extends App {
 
-  def run(args: List[String]) = {
+  def run(args: List[String]) =
     appLogic
       .provideCustomLayer(appLayer)
       .exitCode
-  }
 
-  private val config = ConfigF(
-    todoList = Subject.behavior(TodoList.initial)
-  )
+  private val config = for {
+    todoList <- ZIO(Subject.behavior(TodoList.initial))
+    config = Config(todoList)
+    updater = EventDispatcher.ofModelUpdate(todoList, Event.update _)
+  } yield Has[Config](Config(todoList)) ++ Has[EventDispatcher[Event]](updater)
 
   private val appLayer =
-    ZLayer.succeed[Config](config) ++
-    ZLayer.succeed[EventDispatcher[Event]](EventDispatcher.ofModelUpdate(config.todoList, Event.update _)) ++
+    ZLayer.fromEffectMany(config) ++
     ZLayer.succeed[Api_](HttpClient.api) ++
     ZLayer.succeed[Platform](Platform.default)
 
@@ -34,4 +36,3 @@ object Main extends App {
     _ <- render
   } yield ()
 }
-

@@ -1,6 +1,7 @@
 package fun.web
 
 import fun.api.Api
+import fun.web.client.data._
 
 import colibri.Observable
 import outwatch.{ModifierM, EventDispatcher}
@@ -9,7 +10,6 @@ import zio._
 import zio.internal.Platform
 
 package object client {
-  type Config = ConfigF[Observable]
 
   type WebEnv =
     Has[Platform] with

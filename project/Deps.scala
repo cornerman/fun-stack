@@ -31,13 +31,14 @@ object Deps {
 
   // web app
   val outwatch = new {
-    private val version = "15a066bd"
+    private val version = "d9b5d516"
     val core = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
     val zio = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
 
-  // http requests in scalajs
+  // utils
   val jsrequests = dep("com.github.cornerman.simple-scalajs-requests" %%% "requests" % "c35e198")
+  val cuid = dep("io.github.cornerman.scala-cuid" %%% "scala-cuid" % "f1f7638")
 }
 
 object NpmDeps {
