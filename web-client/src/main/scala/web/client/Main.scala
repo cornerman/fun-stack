@@ -1,38 +1,15 @@
 package fun.web.client
 
-import fun.web.client.data._
+import outwatch._
+import outwatch.dsl._
 
-import zio._
-import zio.console._
-import zio.internal.Platform
-import zio.interop.catz._
+import cats.effect.SyncIO
 
-import colibri._
-import outwatch.{Outwatch, EventDispatcher}
+object Main {
 
-object Main extends App {
+  def main(args: Array[String]): Unit = {
+    val app = Outwatch.renderInto[SyncIO]("#app", div("ho"))
 
-  def run(args: List[String]) =
-    appLogic
-      .provideCustomLayer(appLayer)
-      .exitCode
-
-  private val config = for {
-    todoList <- ZIO(Subject.behavior(TodoList.initial))
-    config = Config(todoList)
-    updater = EventDispatcher.ofModelUpdate(todoList, Event.update _)
-  } yield Has[Config](Config(todoList)) ++ Has[EventDispatcher[Event]](updater)
-
-  private val appLayer =
-    ZLayer.fromEffectMany(config) ++
-    ZLayer.succeed[Api_](HttpClient.api) ++
-    ZLayer.succeed[Platform](Platform.default)
-
-  private val render = ZIO.accessM[WebEnv] { env =>
-    Outwatch.renderInto[Task]("#app", Component.root.provide(env))
+    app.unsafeRunSync()
   }
-
-  private val appLogic = for {
-    _ <- render
-  } yield ()
 }

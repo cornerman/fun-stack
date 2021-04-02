@@ -13,7 +13,7 @@ object Deps {
     val effect = dep("org.typelevel" %%% "cats-effect" % "2.3.0")
   }
   val zio = new {
-    val core = dep("dev.zio" %%% "zio" % "1.0.5")
+    val core = dep("dev.zio" %%% "zio" % "1.0.1")
     val cats = dep("dev.zio" %%% "zio-interop-cats" % "2.3.1.0")
   }
 

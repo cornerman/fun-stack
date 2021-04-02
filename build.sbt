@@ -46,94 +46,13 @@ lazy val webSettings = Seq(
   webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
 )
 
-lazy val api = crossProject(JSPlatform, JVMPlatform)
-  .crossType(CrossType.Pure)
-  .in(file("api"))
-  .settings(commonSettings)
-
-lazy val eventData = project
-  .in(file("event-data"))
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++=
-      Deps.zio.core.value ::
-      Nil
-  )
-
-lazy val eventPersistency = project
-  .dependsOn(eventData)
-  .in(file("event-persistency"))
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++=
-      Deps.zio.core.value ::
-      Nil
-  )
-
-lazy val eventDistributor = project
-  .dependsOn(eventData)
-  .in(file("event-distributor"))
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++=
-      Deps.zio.core.value ::
-      Nil
-  )
-
-lazy val webApi = project
-  .dependsOn(api.jvm, eventData)
-  .in(file("web-api"))
-  .settings(commonSettings)
-  .settings(
-    libraryDependencies ++=
-      Deps.sloth.value ::
-      Deps.zio.core.value ::
-      Deps.zio.cats.value ::
-      Deps.http4s.server.value ::
-      Deps.http4s.dsl.value ::
-      Deps.boopickle.value ::
-      Nil
-  )
-
-lazy val lambdaApi = project
-  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin) //, LocalesPlugin, TzdbPlugin)
-  .dependsOn(api.js)
-  .in(file("lambda-api"))
-  .settings(commonSettings, jsSettings, localeSettings)
-  .settings(
-    libraryDependencies ++=
-      Deps.sloth.value ::
-      /* Deps.zio.core.value :: */
-      /* Deps.zio.cats.value :: */
-      Deps.cats.effect.value ::
-      "dev.zio" %%% "zio" % "1.0.1" ::
-      "dev.zio" %%% "zio-interop-cats" % "2.1.4.0" ::
-      Deps.boopickle.value ::
-      Deps.base64.value ::
-      Deps.awsSdkJS.value ::
-      Deps.awsLambdaJS.value ::
-      Nil,
-
-    npmDependencies in Compile ++=
-      NpmDeps.awsSdk ::
-      Nil
-  )
-
 lazy val webClient = project
   .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin) //, LocalesPlugin, TzdbPlugin)
-  .dependsOn(api.js)
   .in(file("web-client"))
   .settings(commonSettings, jsSettings, localeSettings, webSettings)
   .settings(
     libraryDependencies ++=
-      Deps.sloth.value ::
-      /* Deps.zio.core.value :: */
-      "dev.zio" %%% "zio" % "1.0.1" ::
-      Deps.boopickle.value ::
-      Deps.jsrequests.value ::
-      Deps.cuid.value ::
       Deps.outwatch.core.value ::
-      Deps.outwatch.zio.value ::
       Nil
   )
 
@@ -142,14 +61,10 @@ lazy val root = project
   .settings(
     skip in publish := true,
   )
-  .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, lambdaApi, webClient)
+  .aggregate(webClient)
 
 
 addCommandAlias("dev", "devInit; devWatchAll; devDestroy") // watch all
-addCommandAlias("devf", "devInit; devWatchClient; devDestroy") // only watch frontend
-addCommandAlias("deva", "devInit; devWatchApi; devDestroy") // only watch backend
-addCommandAlias("devInit", "webApi/reStart; webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")
-addCommandAlias("devWatchAll", "~; webApi/reStart; webClient/fastOptJS::webpack")
-addCommandAlias("devWatchClient", "~webClient/fastOptJS::webpack")
-addCommandAlias("devWatchApi", "~webApi/reStart")
-addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer; webApi/reStop")
+addCommandAlias("devInit", "webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")
+addCommandAlias("devWatchAll", "~; webClient/fastOptJS::webpack")
+addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer")
