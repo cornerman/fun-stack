@@ -26,10 +26,7 @@ lazy val commonSettings = Seq(
 
 lazy val jsSettings = Seq(
   useYarn := true,
-  requireJsDomEnv in Test := true,
-  scalaJSUseMainModuleInitializer := true,
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
-  scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
 )
 
 lazy val localeSettings = Seq(
@@ -37,6 +34,9 @@ lazy val localeSettings = Seq(
 )
 
 lazy val webSettings = Seq(
+  scalaJSUseMainModuleInitializer := true,
+  scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
+  requireJsDomEnv in Test := true,
   version in webpack := "4.43.0",
   version in startWebpackDevServer := "3.11.0",
   webpackDevServerExtraArgs := Seq("--progress", "--color"),
@@ -95,15 +95,40 @@ lazy val webApi = project
       Nil
   )
 
+lazy val lambdaApi = project
+  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin) //, LocalesPlugin, TzdbPlugin)
+  .dependsOn(api.js)
+  .in(file("lambda-api"))
+  .settings(commonSettings, jsSettings, localeSettings)
+  .settings(
+    libraryDependencies ++=
+      Deps.sloth.value ::
+      /* Deps.zio.core.value :: */
+      /* Deps.zio.cats.value :: */
+      Deps.cats.effect.value ::
+      "dev.zio" %%% "zio" % "1.0.1" ::
+      "dev.zio" %%% "zio-interop-cats" % "2.1.4.0" ::
+      Deps.boopickle.value ::
+      Deps.base64.value ::
+      Deps.awsSdkJS.value ::
+      Deps.awsLambdaJS.value ::
+      Nil,
+
+    npmDependencies in Compile ++=
+      NpmDeps.awsSdk ::
+      Nil
+  )
+
 lazy val webClient = project
-  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin, LocalesPlugin, TzdbPlugin)
+  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin) //, LocalesPlugin, TzdbPlugin)
   .dependsOn(api.js)
   .in(file("web-client"))
   .settings(commonSettings, jsSettings, localeSettings, webSettings)
   .settings(
     libraryDependencies ++=
       Deps.sloth.value ::
-      Deps.zio.core.value ::
+      /* Deps.zio.core.value :: */
+      "dev.zio" %%% "zio" % "1.0.1" ::
       Deps.boopickle.value ::
       Deps.jsrequests.value ::
       Deps.cuid.value ::
@@ -117,7 +142,7 @@ lazy val root = project
   .settings(
     skip in publish := true,
   )
-  .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, webClient)
+  .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, lambdaApi, webClient)
 
 
 addCommandAlias("dev", "devInit; devWatchAll; devDestroy") // watch all
