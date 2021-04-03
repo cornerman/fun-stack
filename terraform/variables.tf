@@ -16,7 +16,6 @@ locals {
   content_type_map = {
     html     = "text/html",
     js       = "application/javascript",
-    "js.map" = "application/javascript",
     css      = "text/css",
     svg      = "image/svg+xml",
     jpg      = "image/jpeg",
