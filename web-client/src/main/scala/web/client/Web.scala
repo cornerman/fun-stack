@@ -31,12 +31,12 @@ object Component {
       placeholder := "Type Todo",
       value <--[Observable] currentValue,
       onInput.value --> currentValue,
-      onEnter.value.collect(inputToEvent).mapSync(identity).dispatch,
+      onEnter.value.collect(inputToEvent).via(currentValue.contramap[Any](_ => "")).mapSync(identity).dispatch,
     ),
 
     button(
       "Add Todo",
-      onClick.useLatest(currentValue).collect(inputToEvent).mapSync(identity).dispatch,
+      onClick.useLatest(currentValue).collect(inputToEvent).via(currentValue.contramap[Any](_ => "")).mapSync(identity).dispatch,
     ),
   )
 

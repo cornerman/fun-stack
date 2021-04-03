@@ -41,9 +41,10 @@ lazy val webSettings = Seq(
   version in startWebpackDevServer := "3.11.0",
   webpackDevServerExtraArgs := Seq("--progress", "--color"),
   webpackDevServerPort := 12345,
-  webpackConfigFile in fastOptJS := Some(baseDirectory.value / "webpack.config.dev.js"),
-  npmDevDependencies in Compile ++= NpmDeps.webpackDependencies,
   webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
+  webpackConfigFile in fastOptJS := Some(baseDirectory.value / "webpack.config.dev.js"),
+  webpackConfigFile in fullOptJS := Some(baseDirectory.value / "webpack.config.prod.js"),
+  npmDevDependencies in Compile ++= NpmDeps.webpackDependencies,
 )
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
@@ -134,6 +135,12 @@ lazy val webClient = project
       Deps.cuid.value ::
       Deps.outwatch.core.value ::
       Deps.outwatch.zio.value ::
+      Deps.base64.value ::
+      Deps.awsSdkJS.value ::
+      Nil,
+
+    npmDependencies in Compile ++=
+      NpmDeps.awsSdk ::
       Nil
   )
 

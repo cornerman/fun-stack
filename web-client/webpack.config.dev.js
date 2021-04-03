@@ -1,30 +1,28 @@
 const webpack = require('webpack');
 const Path = require('path');
 const CopyPlugin = require("copy-webpack-plugin");
-const CleanPlugin = require("clean-webpack-plugin");
 
 const rootDir = Path.resolve(__dirname, '../../../..');
-const devDir = Path.join(__dirname, "dev");
-const assetsDir = Path.join(rootDir, "assets");
-
-const staticCopyFiles = [
-  Path.join(__dirname, 'webclient-fastopt.js'),
-  Path.join(__dirname, 'webclient-fastopt.js.map'),
-  Path.join(__dirname, 'webclient-fastopt-loader.js')
-];
+const outputDir = Path.join(__dirname, "dev");
+const htmlDir = Path.join(rootDir, "src/html");
+const assetsDir = Path.join(rootDir, "src/assets");
 
 module.exports = require('./scalajs.webpack.config');
 
-module.exports.plugins = [
-  // new CleanPlugin(devDir),
-  new CopyPlugin(staticCopyFiles.map(f => { return { "from": f, "context": Path.dirname(f), "to": '', "force": true} }))
-];
+module.exports.output.path = outputDir;
 
-module.exports.output.path = devDir;
+module.exports.plugins = [
+  new CopyPlugin([
+    { "from": Path.join(__dirname, 'webclient-fastopt.js'), "context": __dirname, "to": '', "force": true},
+    { "from": Path.join(__dirname, 'webclient-fastopt.js.map'), "context": __dirname, "to": '', "force": true},
+    { "from": Path.join(__dirname, 'webclient-fastopt-loader.js'), "context": __dirname, "to": '', "force": true},
+    { "from": Path.join(htmlDir, 'index.dev.html'), "context": htmlDir, "to": 'index.html', "force": true},
+  ])
+];
 
 module.exports.devServer = {
   contentBase: [
-    devDir,
+    outputDir,
     assetsDir
   ],
   allowedHosts: [ ".localhost" ],
