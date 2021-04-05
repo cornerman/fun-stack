@@ -38,9 +38,10 @@ object Deps {
   }
 
   // utils
-  val jsrequests = dep("com.github.cornerman.simple-scalajs-requests" %%% "requests" % "c35e198")
+  val jsrequests = dep("com.github.cornerman.simple-scalajs-requests" %%% "requests" % "b27f25b")
   val cuid = dep("io.github.cornerman.scala-cuid" %%% "scala-cuid" % "f1f7638")
   val base64 = dep("com.github.marklister" %%% "base64" % "0.3.0")
+  val newtype = dep("io.estatico" %%% "newtype" % "0.4.4")
 
   // aws-sdk-js
   val awsSdkJS = dep("net.exoego" %%% "aws-sdk-scalajs-facade" % "0.32.0-v2.798.0")

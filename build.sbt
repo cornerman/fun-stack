@@ -4,7 +4,9 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 inThisBuild(Seq(
   version := "0.1.0-SNAPSHOT",
 
-  scalaVersion := "2.13.3"
+  scalaVersion := "2.13.3",
+
+  Global / onChangedBuildSource := ReloadOnSourceChanges
 ))
 
 lazy val commonSettings = Seq(
@@ -137,6 +139,7 @@ lazy val webClient = project
       Deps.outwatch.zio.value ::
       Deps.base64.value ::
       Deps.awsSdkJS.value ::
+      Deps.newtype.value ::
       Nil,
 
     npmDependencies in Compile ++=

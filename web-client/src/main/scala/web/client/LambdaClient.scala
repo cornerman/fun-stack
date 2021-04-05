@@ -4,7 +4,7 @@ import requests.JsRequestBytes
 import fun.api.Api
 
 import zio._
-import zio.interop.catz.core._
+import zio.interop.catz._
 
 import sloth._
 
@@ -28,19 +28,37 @@ object LambdaClient {
 }
 
 object LambdaTransport extends RequestTransport[ByteBuffer, ApiResult] {
-  private val config = AWSConfig()
-  private val lambda = new Lambda(config)
-  private val lambdaName = ""
+  private val lambdaName = "lambda-api"
 
-  def apply(request: Request[ByteBuffer]): ApiResult[ByteBuffer] = {
-    val payload = js.Dynamic.literal(path = request.path.toJSArray, payload = request.payload.array.toBase64)
-    val invocation = InvocationRequest(
-      FunctionName = lambdaName,
-      InvocationType = InvocationType.RequestResponse,
-      Payload = js.JSON.stringify(payload)
-    )
-    ZIO.fromFuture(_ => lambda.invoke(invocation).promise().toFuture)
-      .map(r => ByteBuffer.wrap(r.Payload.asInstanceOf[String].toByteArray))
-      .mapError(ApiError.RequestFailed(_))
+  def apply(request: Request[ByteBuffer]): ApiResult[ByteBuffer] = ZIO.accessM[ApiEnv] { env =>
+    //TODO headIO
+    UIO.effectAsyncInterrupt[aws.User] { cb =>
+      val cancelable = colibri.Cancelable.variable()
+      cancelable() = env.get[aws.Auth].currentUser.foreach(_.foreach { user =>
+        cancelable.cancel()
+        cb(UIO.succeed(user))
+      })
+      Left(UIO(cancelable.cancel()))
+    }.flatMap { user =>
+      Task.effectSuspend {
+        val config = AWSConfig(region = AppConfig.region, credentials = user.credentials)
+        val lambda = new Lambda(config)
+
+        println("PAY " + request.payload)
+        val payloadArray = new Array[Byte](request.payload.remaining)
+        request.payload.get(payloadArray)
+        println("PAYA " + payloadArray)
+        val payload = js.Dynamic.literal(path = request.path.toJSArray, payload = payloadArray.toBase64)
+
+        val invocation = InvocationRequest(
+          FunctionName = lambdaName,
+          InvocationType = InvocationType.RequestResponse,
+          Payload = js.JSON.stringify(payload)
+        )
+
+        Task.fromFuture(_ => lambda.invokeFuture(invocation))
+          .map(r => ByteBuffer.wrap(r.Payload.asInstanceOf[String].toByteArray))
+      }
+    }.mapError(ApiError.RequestFailed(_))
   }
 }

@@ -13,6 +13,7 @@ resource "aws_cognito_user_pool" "user" {
     email_sending_account = "COGNITO_DEFAULT"
   }
   password_policy {
+    temporary_password_validity_days = 7
     minimum_length    = 6
     require_lowercase = false
     require_numbers   = false
@@ -44,11 +45,23 @@ resource "aws_cognito_user_pool_client" "client" {
     "COGNITO",
   ]
   logout_urls = [
-    "https://google.de",
+    "https://${local.domain}",
   ]
   callback_urls = [
-    "https://google.de",
+    "https://${local.domain}",
   ]
+}
+
+resource "aws_cognito_identity_pool" "user" {
+  identity_pool_name               = "fun_user"
+
+  allow_unauthenticated_identities = false
+
+  cognito_identity_providers {
+    client_id               = aws_cognito_user_pool_client.client.id
+    provider_name           = aws_cognito_user_pool.user.endpoint
+    server_side_token_check = false
+  }
 }
 
 resource "aws_cognito_user_pool_domain" "user" {
@@ -67,5 +80,64 @@ resource "aws_route53_record" "cognito" {
     evaluate_target_health = false
     name                   = aws_cognito_user_pool_domain.user.cloudfront_distribution_arn
     zone_id                = "Z2FDTNDATAQYW2" # This zone_id is fixed
+  }
+}
+
+resource "aws_iam_role" "user" {
+  name = "identity-user"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "cognito-identity.amazonaws.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "cognito-identity.amazonaws.com:aud": "${aws_cognito_identity_pool.user.id}"
+        },
+        "ForAnyValue:StringLike": {
+          "cognito-identity.amazonaws.com:amr": "authenticated"
+        }
+      }
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "user" {
+  name        = "identity-user"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lambda:InvokeFunction"
+            ],
+            "Resource": ${jsonencode([ for lambda in aws_lambda_function.lambda: lambda.arn])}
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "user" {
+  role       = aws_iam_role.user.name
+  policy_arn = aws_iam_policy.user.arn
+}
+
+resource "aws_cognito_identity_pool_roles_attachment" "user" {
+  identity_pool_id = aws_cognito_identity_pool.user.id
+
+  roles = {
+    "authenticated" = aws_iam_role.user.arn
   }
 }

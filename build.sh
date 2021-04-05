@@ -3,7 +3,7 @@
 cd "$(dirname $0)"
 build_dir="./build"
 
-sbt clean webClient/fullOptJS::webpack lambdaApi/fullOptJS
+sbt webClient/fullOptJS::webpack lambdaApi/fullOptJS
 
 rm -rf $build_dir
 mkdir -p $build_dir

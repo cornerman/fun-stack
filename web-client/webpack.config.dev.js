@@ -6,6 +6,7 @@ const rootDir = Path.resolve(__dirname, '../../../..');
 const outputDir = Path.join(__dirname, "dev");
 const htmlDir = Path.join(rootDir, "src/html");
 const assetsDir = Path.join(rootDir, "src/assets");
+const assetsDevDir = Path.join(rootDir, "src/assetsDev");
 
 module.exports = require('./scalajs.webpack.config');
 
@@ -23,7 +24,8 @@ module.exports.plugins = [
 module.exports.devServer = {
   contentBase: [
     outputDir,
-    assetsDir
+    assetsDir,
+    assetsDevDir
   ],
   allowedHosts: [ ".localhost" ],
   watchContentBase: true,

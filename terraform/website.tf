@@ -113,3 +113,21 @@ resource "aws_s3_bucket_object" "website" {
   cache_control = "no-cache" # TODO
   content_type  = lookup(local.content_type_map, regex("\\.(?P<extension>[A-Za-z0-9.]+)$", each.key).extension, null)
 }
+
+resource "aws_s3_bucket_object" "config_file" {
+  bucket = aws_s3_bucket.website.bucket
+  key    = "app_config.js"
+  content = <<EOF
+window.AppConfig = {
+  "domain": "${local.domain}",
+  "domainAuth": "${local.domain_auth}",
+  "clientIdAuth": "${aws_cognito_user_pool_client.client.id}",
+  "region": "${local.region}",
+  "identityPoolId": "${aws_cognito_identity_pool.user.id}",
+  "cognitoEndpoint": "${aws_cognito_user_pool.user.endpoint}"
+};
+EOF
+
+  cache_control = "no-cache" # TODO
+  content_type  = "application/javascript"
+}

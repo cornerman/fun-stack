@@ -1,6 +1,7 @@
 package fun.web.client
 
 import fun.web.client.data._
+import fun.web.client.aws._
 
 import zio._
 import zio.console._
@@ -12,10 +13,14 @@ import outwatch.{Outwatch, EventDispatcher}
 
 object Main extends App {
 
+  org.scalajs.dom.console.log("AppConfig", AppConfig)
+
   def run(args: List[String]) =
     appLogic
       .provideCustomLayer(appLayer)
       .exitCode
+
+  private val auth = new Auth(AuthConfig(baseUrl = Url(s"https://${AppConfig.domainAuth}"), redirectUrl = Url(s"https://${AppConfig.domain}"), clientId = ClientId(AppConfig.clientIdAuth), region = Region(AppConfig.region), identityPoolId = IdentityPoolId(AppConfig.identityPoolId), cognitoEndpoint = Url(AppConfig.cognitoEndpoint)))
 
   private val config = for {
     todoList <- ZIO(Subject.behavior(TodoList.initial))
@@ -25,7 +30,8 @@ object Main extends App {
 
   private val appLayer =
     ZLayer.fromEffectMany(config) ++
-    ZLayer.succeed[Api_](HttpClient.api) ++
+    ZLayer.succeed[Api_](LambdaClient.api) ++
+    ZLayer.succeed[Auth](auth) ++
     ZLayer.succeed[Platform](Platform.default)
 
   private val render = ZIO.accessM[WebEnv] { env =>

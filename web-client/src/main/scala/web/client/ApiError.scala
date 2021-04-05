@@ -2,7 +2,7 @@ package fun.web.client
 
 sealed trait ApiError
 object ApiError {
-  case object BadResponse extends ApiError
+  case object Unauthorized extends ApiError
   case class RequestFailed(error: Throwable) extends ApiError
   case class ClientFailure(failure: sloth.ClientFailure) extends ApiError
 

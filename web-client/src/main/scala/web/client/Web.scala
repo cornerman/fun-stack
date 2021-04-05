@@ -60,15 +60,46 @@ object Component {
     val (undoneTodos, doneTodos) = todoList.todos.partition(todo => todoList.isDone(todo.id))
 
     ModifierM[WebEnv](
-      b("Todos"),
-      doneTodos.map(todoItem(todoList, _)),
+      div(
+        b("Todos"),
+        doneTodos.map(todoItem(todoList, _)),
+      ),
 
-      b("Done"),
-      undoneTodos.map(todoItem(todoList, _))
+      div(
+        b("Done"),
+        undoneTodos.map(todoItem(todoList, _))
+      ),
     )
   }
 
+  val login = div(
+    ModifierM.access[WebEnv] { env =>
+      val auth = env.get[aws.Auth]
+      auth.currentUser.map {
+        case Some(user) => button(s"Logout (${user.info.email})", onClick.doAsync(auth.logout))
+        case None => button("Login", onClick.doAsync(auth.login))
+      }
+    }
+  )
+
+  val apiInteraction: ModifierM[WebEnv] = div(
+    ModifierM.accessM[WebEnv] { env =>
+      ModifierM(
+        env.get[Api_].getState
+          .mapError(_.toString)
+          .map(_.toString),
+        button("PRESS", onClick.doZIO(env.get[Api_].sendCommand(fun.api.Command.IncrementValue).mapError(_ => new Exception)))
+      )
+    }
+  )
+
   val root = div(
+    div(
+      login
+    ),
+    div(
+      apiInteraction
+    ),
     div(
       inputMask
     ),

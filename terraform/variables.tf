@@ -1,4 +1,5 @@
 locals {
+  region      = "eu-central-1"
   domain      = "funstack.net"
   domain_auth = "auth.${local.domain}"
 
