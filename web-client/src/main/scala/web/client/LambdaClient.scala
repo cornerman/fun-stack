@@ -57,7 +57,7 @@ object LambdaTransport extends RequestTransport[ByteBuffer, ApiResult] {
         )
 
         Task.fromFuture(_ => lambda.invokeFuture(invocation))
-          .map(r => ByteBuffer.wrap(r.Payload.asInstanceOf[String].toByteArray))
+          .map(r => ByteBuffer.wrap(js.JSON.parse(r.Payload.asInstanceOf[String]).asInstanceOf[js.Dynamic].response.asInstanceOf[String].toByteArray))
       }
     }.mapError(ApiError.RequestFailed(_))
   }
