@@ -14,11 +14,11 @@ resource "aws_cognito_user_pool" "user" {
   }
   password_policy {
     temporary_password_validity_days = 7
-    minimum_length    = 6
-    require_lowercase = false
-    require_numbers   = false
-    require_symbols   = false
-    require_uppercase = false
+    minimum_length                   = 6
+    require_lowercase                = false
+    require_numbers                  = false
+    require_symbols                  = false
+    require_uppercase                = false
   }
 }
 resource "aws_cognito_user_pool_client" "client" {
@@ -53,7 +53,7 @@ resource "aws_cognito_user_pool_client" "client" {
 }
 
 resource "aws_cognito_identity_pool" "user" {
-  identity_pool_name               = "fun_user"
+  identity_pool_name = "fun_user"
 
   allow_unauthenticated_identities = false
 
@@ -111,7 +111,7 @@ EOF
 }
 
 resource "aws_iam_policy" "user" {
-  name        = "identity-user"
+  name = "identity-user"
 
   policy = <<EOF
 {
@@ -122,7 +122,7 @@ resource "aws_iam_policy" "user" {
             "Action": [
                 "lambda:InvokeFunction"
             ],
-            "Resource": ${jsonencode([ for lambda in aws_lambda_function.lambda: lambda.arn])}
+            "Resource": ${jsonencode([for lambda in aws_lambda_function.lambda : lambda.arn])}
         }
     ]
 }

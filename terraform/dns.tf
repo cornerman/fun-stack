@@ -1,5 +1,5 @@
 locals {
-  certificates = [aws_acm_certificate.main, aws_acm_certificate.auth]
+  certificates = [aws_acm_certificate.main, aws_acm_certificate.auth, aws_acm_certificate.ws]
 }
 
 data "aws_route53_zone" "main" {
@@ -16,6 +16,11 @@ resource "aws_acm_certificate" "auth" {
   domain_name       = local.domain_auth
   validation_method = "DNS"
   provider          = aws.us
+}
+
+resource "aws_acm_certificate" "ws" {
+  domain_name       = local.domain_ws
+  validation_method = "DNS"
 }
 
 resource "aws_route53_record" "certificate_validation" {
@@ -49,4 +54,11 @@ resource "aws_acm_certificate_validation" "auth" {
     for dvo in aws_acm_certificate.auth.domain_validation_options : aws_route53_record.certificate_validation[dvo.domain_name].fqdn
   ]
   provider = aws.us
+}
+
+resource "aws_acm_certificate_validation" "ws" {
+  certificate_arn = aws_acm_certificate.ws.arn
+  validation_record_fqdns = [
+    for dvo in aws_acm_certificate.ws.domain_validation_options : aws_route53_record.certificate_validation[dvo.domain_name].fqdn
+  ]
 }

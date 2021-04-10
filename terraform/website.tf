@@ -115,8 +115,8 @@ resource "aws_s3_bucket_object" "website" {
 }
 
 resource "aws_s3_bucket_object" "config_file" {
-  bucket = aws_s3_bucket.website.bucket
-  key    = "app_config.js"
+  bucket  = aws_s3_bucket.website.bucket
+  key     = "app_config.js"
   content = <<EOF
 window.AppConfig = {
   "domain": "${local.domain}",

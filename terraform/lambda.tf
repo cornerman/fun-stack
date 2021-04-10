@@ -1,7 +1,7 @@
 resource "aws_cloudwatch_log_group" "lambda" {
   for_each = local.lambda_functions
 
-  name              = "/lambda/${each.key}"
+  name              = "/aws/lambda/${each.key}"
   retention_in_days = 3
 }
 
