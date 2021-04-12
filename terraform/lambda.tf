@@ -14,9 +14,16 @@ resource "aws_lambda_function" "lambda" {
   memory_size      = each.value.memory_size
   filename         = each.value.filename
   handler          = each.value.handler
-  runtime          = "nodejs12.x"
+  runtime          = "nodejs14.x"
   publish          = true
   source_code_hash = filebase64sha256(each.value.filename)
+
+  dynamic "environment" {
+    for_each = length(keys(each.value.environment)) > 0 ? ["1"] : []
+    content {
+      variables = each.value.environment
+    }
+  }
 }
 
 resource "aws_iam_role" "lambda" {

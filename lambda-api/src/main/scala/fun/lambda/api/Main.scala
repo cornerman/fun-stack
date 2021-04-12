@@ -11,12 +11,13 @@ import scala.scalajs.js
 import java.nio.ByteBuffer
 
 object Main {
+
   @js.annotation.JSExportTopLevel("handler")
-  def handler(event: LambdaEvent, context: Context): js.Promise[LambdaResponse]  = {
+  def handler(event: APIGatewayWSEvent, context: Context): js.Promise[APIGatewayProxyStructuredResultV2] = {
     val handler = appLogic(event, context)
-      .catchAll(e => ZIO.succeed(new LambdaResponse { error = e.toString }))
-      .catchAllDefect(e => ZIO.succeed(new LambdaResponse { error = e.toString }))
-      .provideCustomLayer(appLayer)
+      // .catchAll(e => ZIO.succeed(new APIGatewayWSResponse { error = e.toString }))
+      .catchAllDefect(e => ZIO.succeed(APIGatewayProxyStructuredResultV2(body = e.toString, statusCode = 500)))
+      .provideCustomLayer(cachedAppLayer)
       .tap(response => putStrLn(js.JSON.stringify(response)))
 
     import scala.scalajs.js.JSConverters._
@@ -24,17 +25,20 @@ object Main {
     Runtime.default.unsafeRunToFuture(handler).toJSPromise
   }
 
-  def appLogic(event: LambdaEvent, context: Context) = for {
+  def appLogic(event: APIGatewayWSEvent, context: Context) = for {
     _ <- putStrLn(js.JSON.stringify(event))
     _ <- putStrLn(js.JSON.stringify(context))
-    path <- IO.fromEither(event.path.toRight(ApiError.BadRequest))
-    payload <- IO.fromEither(event.payload.toRight(ApiError.BadRequest))
-    value <- Server.handle(path.toList, ByteBuffer.wrap(payload.toByteArray))
-    valueArray = new Array[Byte](value.remaining)
-    _ = value.get(valueArray)
-  } yield new LambdaResponse { response = valueArray.toBase64 }
+    // path    <- IO.fromEither(event.path.toRight(ApiError.BadRequest))
+    // payload <- IO.fromEither(event.payload.toRight(ApiError.BadRequest))
+    // value   <- Server.handle(path.toList, ByteBuffer.wrap(payload.toByteArray))
+    // valueArray = new Array[Byte](value.remaining)
+    // _          = value.get(valueArray)
+    // } yield new APIGatewayWSResponse { response = valueArray.toBase64 }
+  } yield APIGatewayProxyStructuredResultV2(body = "OK", statusCode = 200)
 
   val appLayer =
     ZLayer.succeed[Api_](ApiLive) ++
-    ZLayer.fromEffect[Any, Nothing, Database](DatabaseLive.create)
+      ZLayer.fromEffect[Any, Nothing, Database](DatabaseLive.create)
+
+  val cachedAppLayer = Runtime.default.unsafeRunTask(appLayer.memoize.useNow)
 }

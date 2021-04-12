@@ -144,6 +144,7 @@ lazy val webClient = project
 
     npmDependencies in Compile ++=
       NpmDeps.awsSdk ::
+      NpmDeps.aws4 ::
       Nil
   )
 

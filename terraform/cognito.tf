@@ -122,7 +122,7 @@ resource "aws_iam_policy" "user" {
             "Action": [
                 "lambda:InvokeFunction"
             ],
-            "Resource": ${jsonencode([for lambda in aws_lambda_function.lambda : lambda.arn])}
+            "Resource": "${aws_lambda_function.lambda["lambda-api"].arn}"
         }
     ]
 }

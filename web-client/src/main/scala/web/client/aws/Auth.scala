@@ -14,36 +14,43 @@ import facade.amazonaws.services.sts._
 import org.scalajs.dom.window.localStorage
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
 @js.native
 trait TokenResponse extends js.Object {
-  def access_token: String = js.native
-  def id_token: String = js.native
+  def access_token: String  = js.native
+  def id_token: String      = js.native
   def refresh_token: String = js.native
-  def expires_in: String = js.native
-  def token_type: String = js.native
+  def expires_in: String    = js.native
+  def token_type: String    = js.native
 }
 
 @js.native
 trait UserInfoResponse extends js.Object {
-  def sub: String = js.native
-  def username: String = js.native
-  def email: String = js.native
+  def sub: String             = js.native
+  def username: String        = js.native
+  def email: String           = js.native
   def email_verified: Boolean = js.native
 }
 
 case class User(
-  info: UserInfoResponse,
-  token: TokenResponse,
-  credentials: AWSCredentials
+    info: UserInfoResponse,
+    token: TokenResponse,
+    credentials: AWSCredentials,
 )
 
-case class AuthConfig(baseUrl: Url, redirectUrl: Url, cognitoEndpoint: Url, identityPoolId: IdentityPoolId, clientId: ClientId, region: Region)
+case class AuthConfig(
+    baseUrl: Url,
+    redirectUrl: Url,
+    cognitoEndpoint: Url,
+    identityPoolId: IdentityPoolId,
+    clientId: ClientId,
+    region: Region,
+)
 
 private sealed trait Authentication
 private object Authentication {
-  case class AuthCode(code: String) extends Authentication
+  case class AuthCode(code: String)      extends Authentication
   case class RefreshToken(token: String) extends Authentication
 }
 
@@ -67,6 +74,29 @@ class Auth(val config: AuthConfig) {
 
   private var currentUserVariable: Option[User] = None
 
+  def signUrl(credentials: AWSCredentials, url: Url): Future[String] = {
+    credentials
+      .refreshPromise()
+      .`then`[String] { _ =>
+        AWS4
+          .sign(
+            new AWS4SignOptions {
+              val host      = url.value
+              val path      = s"?X-Amz-Security-Token=${js.URIUtils.encodeURIComponent(credentials.sessionToken)}"
+              val service   = "execute-api"
+              val region    = config.region.value
+              val signQuery = true
+            },
+            new AWS4SignParams {
+              val accessKeyId     = credentials.accessKeyId
+              val secretAccessKey = credentials.secretAccessKey
+            },
+          )
+          .path
+      }
+      .toFuture
+  }
+
   def login: IO[Unit] = IO {
     val url = s"${config.baseUrl.value}/login?response_type=code&client_id=${config.clientId.value}&redirect_uri=${config.redirectUrl.value}"
     dom.window.location.href = url
@@ -74,17 +104,19 @@ class Auth(val config: AuthConfig) {
 
   def logout: IO[Unit] = IO {
     localStorage.removeItem(storageKeyRefreshToken)
-    val url = s"${config.baseUrl.value}/logout?client_id=${config.clientId.value}&logout_uri=${config.redirectUrl.value}"
+    val url =
+      s"${config.baseUrl.value}/logout?client_id=${config.clientId.value}&logout_uri=${config.redirectUrl.value}"
     dom.window.location.href = url
   }
 
   val currentUserNow: IO[Option[User]] = IO(currentUserVariable) // TODO currentUser.headIO
 
   val currentUser: Observable[Option[User]] =
-    authentication.fold[Observable[Option[User]]](Observable(None)) { authentication =>
+    authentication
+      .fold[Observable[Option[User]]](Observable(None)) { authentication =>
         Observable(authentication)
           .mapAsync {
-            case Authentication.AuthCode(code) => getToken(code)
+            case Authentication.AuthCode(code)      => getToken(code)
             case Authentication.RefreshToken(token) => refreshToken(token)
           }
           .mapAsync(token => getUserInfo(token).map(info => User(info, token, credentials(token))))
@@ -101,26 +133,26 @@ class Auth(val config: AuthConfig) {
             dom.console.error("Error in user handling: " + t)
             None
           }
-    }.doOnNext {
-      case Some(user) =>
-        dom.console.log(user.token)
-        dom.console.log(user.info)
-        dom.console.log(user.credentials)
-        val sts = new STS(AWSConfig(region = "eu-central-1", credentials = user.credentials))
-        val r = GetCallerIdentityRequest()
-        import scala.util._
-        import scala.concurrent.ExecutionContext.Implicits.global
-        sts.getCallerIdentityFuture(r).onComplete {
-          case Success(r) => dom.console.log("IDENTITY", r)
-          case Failure(r) => dom.console.log("IDENTITYerror", r)
-        }
-      case None =>
-        dom.console.log("Nope")
-    }
-    .doOnNext(currentUserVariable = _)
-    .doOnNext(x => println("WTF " + x + " " + currentUserVariable))
-    .replay
-    .hot
+      }
+      .doOnNext {
+        case Some(user) =>
+          dom.console.log(user.token)
+          dom.console.log(user.info)
+          dom.console.log(user.credentials)
+          val sts = new STS(AWSConfig(region = "eu-central-1", credentials = user.credentials))
+          val r   = GetCallerIdentityRequest()
+          import scala.util._
+          import scala.concurrent.ExecutionContext.Implicits.global
+          sts.getCallerIdentityFuture(r).onComplete {
+            case Success(r) => dom.console.log("IDENTITY", r)
+            case Failure(r) => dom.console.log("IDENTITYerror", r)
+          }
+        case None =>
+          dom.console.log("Nope")
+      }
+      .doOnNext(currentUserVariable = _)
+      .replay
+      .hot
 
   private def credentials(token: TokenResponse) = CognitoIdentityCredentials(
     new CognitoIdentityCredentialsParams {
@@ -129,33 +161,59 @@ class Auth(val config: AuthConfig) {
     },
     new CognitoIdentityCredentialsClientConfig {
       region = config.region.value
-    }
+    },
   )
 
-  private def getUserInfo(token: TokenResponse): IO[UserInfoResponse] = IO.fromFuture(IO {
-    val url = s"${config.baseUrl.value}/oauth2/userInfo"
-    Fetch.fetch(url, new RequestInit {
-      method = HttpMethod.GET
-      headers = js.Array(js.Array("Authorization", s"${token.token_type} ${token.access_token}"), js.Array("Content-Type", "application/json;charset=utf8"))
-    }).`then`[js.Promise[js.Any]](_.json()).toFuture
-  }).map(_.asInstanceOf[UserInfoResponse])
+  private def getUserInfo(token: TokenResponse): IO[UserInfoResponse] = IO
+    .fromFuture(IO {
+      val url = s"${config.baseUrl.value}/oauth2/userInfo"
+      Fetch
+        .fetch(
+          url,
+          new RequestInit {
+            method = HttpMethod.GET
+            headers = js.Array(
+              js.Array("Authorization", s"${token.token_type} ${token.access_token}"),
+              js.Array("Content-Type", "application/json;charset=utf8"),
+            )
+          },
+        )
+        .`then`[js.Promise[js.Any]](_.json())
+        .toFuture
+    })
+    .map(_.asInstanceOf[UserInfoResponse])
 
-  private def getToken(authCode: String): IO[TokenResponse] = IO.fromFuture(IO {
-    val url = s"${config.baseUrl.value}/oauth2/token"
-    Fetch.fetch(url, new RequestInit {
-      method = HttpMethod.POST
-      body = s"grant_type=authorization_code&client_id=${config.clientId.value}&code=${authCode}&redirect_uri=${config.redirectUrl.value}"
-      headers = js.Array(js.Array("Content-Type", "application/x-www-form-urlencoded"))
-    }).`then`[js.Promise[js.Any]](_.json()).toFuture
-  }).map(_.asInstanceOf[TokenResponse])
+  private def getToken(authCode: String): IO[TokenResponse] = IO
+    .fromFuture(IO {
+      val url = s"${config.baseUrl.value}/oauth2/token"
+      Fetch
+        .fetch(
+          url,
+          new RequestInit {
+            method = HttpMethod.POST
+            body = s"grant_type=authorization_code&client_id=${config.clientId.value}&code=${authCode}&redirect_uri=${config.redirectUrl.value}"
+            headers = js.Array(js.Array("Content-Type", "application/x-www-form-urlencoded"))
+          },
+        )
+        .`then`[js.Promise[js.Any]](_.json())
+        .toFuture
+    })
+    .map(_.asInstanceOf[TokenResponse])
 
-  private def refreshToken(refreshToken: String): IO[TokenResponse] = IO.fromFuture(IO {
-    val url = s"${config.baseUrl.value}/oauth2/token"
-    Fetch.fetch(url, new RequestInit {
-      method = HttpMethod.POST
-      body = s"grant_type=refresh_token&client_id=${config.clientId.value}&refresh_token=${refreshToken}"
-      headers = js.Array(js.Array("Content-Type", "application/x-www-form-urlencoded"))
-    }).`then`[js.Promise[js.Any]](_.json()).toFuture
-  }).map(r => js.Object.assign(js.Dynamic.literal(refresh_token = refreshToken), r).asInstanceOf[TokenResponse])
+  private def refreshToken(refreshToken: String): IO[TokenResponse] = IO
+    .fromFuture(IO {
+      val url = s"${config.baseUrl.value}/oauth2/token"
+      Fetch
+        .fetch(
+          url,
+          new RequestInit {
+            method = HttpMethod.POST
+            body = s"grant_type=refresh_token&client_id=${config.clientId.value}&refresh_token=${refreshToken}"
+            headers = js.Array(js.Array("Content-Type", "application/x-www-form-urlencoded"))
+          },
+        )
+        .`then`[js.Promise[js.Any]](_.json())
+        .toFuture
+    })
+    .map(r => js.Object.assign(js.Dynamic.literal(refresh_token = refreshToken), r).asInstanceOf[TokenResponse])
 }
-

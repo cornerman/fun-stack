@@ -121,6 +121,7 @@ resource "aws_s3_bucket_object" "config_file" {
 window.AppConfig = {
   "domain": "${local.domain}",
   "domainAuth": "${local.domain_auth}",
+  "domainWS": "${local.domain_ws}",
   "clientIdAuth": "${aws_cognito_user_pool_client.client.id}",
   "region": "${local.region}",
   "identityPoolId": "${aws_cognito_identity_pool.user.id}",

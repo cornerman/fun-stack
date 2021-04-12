@@ -10,6 +10,16 @@ locals {
       filename    = "../build/lambda-api.zip"
       timeout     = 30
       memory_size = 256
+      environment = {}
+    }
+    authorizer = {
+      handler     = "index.handler"
+      filename    = "authorizer/index.zip"
+      timeout     = 30
+      memory_size = 128
+      environment = {
+        COGNITO_POOL_ID = aws_cognito_user_pool.user.id
+      }
     }
   }
 

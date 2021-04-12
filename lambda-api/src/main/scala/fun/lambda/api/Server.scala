@@ -21,15 +21,14 @@ import scala.concurrent.{Future, ExecutionContext}
 object Server {
 
   def handle(path: List[String], payload: PickleType): ZIO[
-    Has[Api[ApiResult]] with
-    ApiEnv,
+    Has[Api[ApiResult]] with ApiEnv,
     ApiError,
     PickleType
   ] = ZIO.accessM { env =>
     import boopickle.Default._
 
     val apiImpl = env.get[Api[ApiResult]]
-    val router = Router[ByteBuffer, ApiResult].route(apiImpl)
+    val router  = Router[ByteBuffer, ApiResult].route(apiImpl)
 
     router(Request(path, payload)) match {
       case RouterResult.Success(_, result) => result.map(_.serialized)

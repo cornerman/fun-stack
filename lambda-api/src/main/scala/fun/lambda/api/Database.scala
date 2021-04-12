@@ -15,5 +15,8 @@ class DatabaseLive private(ref: Ref[State]) extends Database {
 }
 
 object DatabaseLive {
-  def create = Ref.make(State.initial).map(new DatabaseLive(_))
+  def create = {
+    println("CALL DB CREATE")
+    Ref.make(State.initial).tap(_ => UIO(println("CReaTING"))).map(new DatabaseLive(_))
+  }
 }

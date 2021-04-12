@@ -44,10 +44,12 @@ object LambdaTransport extends RequestTransport[ByteBuffer, ApiResult] {
         val config = AWSConfig(region = AppConfig.region, credentials = user.credentials)
         val lambda = new Lambda(config)
 
-        println("PAY " + request.payload)
+        println("REQ " + request.payload)
         val payloadArray = new Array[Byte](request.payload.remaining)
+        request.payload.rewind()
+        println("REW " + request.payload)
         request.payload.get(payloadArray)
-        println("PAYA " + payloadArray)
+        println("ARR " + payloadArray)
         val payload = js.Dynamic.literal(path = request.path.toJSArray, payload = payloadArray.toBase64)
 
         val invocation = InvocationRequest(

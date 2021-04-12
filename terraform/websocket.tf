@@ -3,7 +3,12 @@ resource "aws_apigatewayv2_api" "websocket" {
   protocol_type              = "WEBSOCKET"
   route_selection_expression = "$request.body.action"
 }
+resource "aws_apigatewayv2_route" "websocket_ping" {
+  api_id    = aws_apigatewayv2_api.websocket.id
+  route_key = "ping"
 
+  target = "integrations/${aws_apigatewayv2_integration.websocket_ping.id}"
+}
 resource "aws_apigatewayv2_route" "websocket_default" {
   api_id    = aws_apigatewayv2_api.websocket.id
   route_key = "$default"
@@ -11,8 +16,10 @@ resource "aws_apigatewayv2_route" "websocket_default" {
   target = "integrations/${aws_apigatewayv2_integration.websocket_default.id}"
 }
 resource "aws_apigatewayv2_route" "websocket_connect" {
-  api_id    = aws_apigatewayv2_api.websocket.id
-  route_key = "$connect"
+  api_id             = aws_apigatewayv2_api.websocket.id
+  route_key          = "$connect"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.websocket.id
 
   target = "integrations/${aws_apigatewayv2_integration.websocket_connect.id}"
 }
@@ -22,23 +29,50 @@ resource "aws_apigatewayv2_route" "websocket_disconnect" {
 
   target = "integrations/${aws_apigatewayv2_integration.websocket_disconnect.id}"
 }
+resource "aws_apigatewayv2_integration" "websocket_ping" {
+  api_id           = aws_apigatewayv2_api.websocket.id
+  integration_type = "MOCK"
+
+  request_templates = {
+    "application/json" = <<EOF
+{
+    "statusCode": 200,
+    "message": "pong"
+}
+EOF
+  }
+}
+resource "aws_apigatewayv2_integration_response" "websocket_ping" {
+  api_id                   = aws_apigatewayv2_api.websocket.id
+  integration_id           = aws_apigatewayv2_integration.websocket_ping.id
+  integration_response_key = "/200/"
+}
+resource "aws_apigatewayv2_route_response" "websocket_ping" {
+  api_id             = aws_apigatewayv2_api.websocket.id
+  route_id           = aws_apigatewayv2_route.websocket_ping.id
+  route_response_key = "$default"
+}
 resource "aws_apigatewayv2_integration" "websocket_default" {
-  api_id                    = aws_apigatewayv2_api.websocket.id
-  integration_type          = "AWS"
-  credentials_arn           = aws_iam_role.websocket.arn
-  content_handling_strategy = "CONVERT_TO_TEXT"
-  integration_method        = "POST"
-  integration_uri           = aws_lambda_function.lambda["lambda-api"].invoke_arn
-  passthrough_behavior      = "WHEN_NO_MATCH"
+  api_id           = aws_apigatewayv2_api.websocket.id
+  integration_type = "AWS_PROXY"
+  credentials_arn  = aws_iam_role.websocket.arn
+  integration_uri  = aws_lambda_function.lambda["lambda-api"].invoke_arn
+}
+resource "aws_apigatewayv2_integration_response" "websocket_default" {
+  api_id                   = aws_apigatewayv2_api.websocket.id
+  integration_id           = aws_apigatewayv2_integration.websocket_default.id
+  integration_response_key = "/200/"
+}
+resource "aws_apigatewayv2_route_response" "websocket_default" {
+  api_id             = aws_apigatewayv2_api.websocket.id
+  route_id           = aws_apigatewayv2_route.websocket_default.id
+  route_response_key = "$default"
 }
 resource "aws_apigatewayv2_integration" "websocket_connect" {
-  api_id               = aws_apigatewayv2_api.websocket.id
-  integration_type     = "AWS"
-  credentials_arn      = aws_iam_role.websocket.arn
-  integration_method   = "POST"
-  integration_uri      = "arn:aws:apigateway:eu-central-1:dynamodb:action/PutItem"
-  passthrough_behavior = "WHEN_NO_MATCH"
-  timeout_milliseconds = 29000
+  api_id           = aws_apigatewayv2_api.websocket.id
+  integration_type = "AWS"
+  credentials_arn  = aws_iam_role.websocket.arn
+  integration_uri  = "arn:aws:apigateway:eu-central-1:dynamodb:action/PutItem"
 
   request_templates = {
     "application/json" = <<EOF
@@ -47,8 +81,8 @@ resource "aws_apigatewayv2_integration" "websocket_connect" {
       "connection_id": {
         "S": "$context.connectionId"
       },
-      "request_id": {
-        "S": "$$context.requestId"
+      "user_id": {
+        "S": "$context.authorizer.sub"
       }
     },
     "TableName": "${aws_dynamodb_table.websocket_connections.name}"
@@ -67,13 +101,10 @@ resource "aws_apigatewayv2_route_response" "websocket_connect" {
   route_response_key = "$default"
 }
 resource "aws_apigatewayv2_integration" "websocket_disconnect" {
-  api_id               = aws_apigatewayv2_api.websocket.id
-  integration_type     = "AWS"
-  credentials_arn      = aws_iam_role.websocket.arn
-  integration_method   = "POST"
-  integration_uri      = "arn:aws:apigateway:eu-central-1:dynamodb:action/DeleteItem"
-  passthrough_behavior = "WHEN_NO_MATCH"
-  timeout_milliseconds = 29000
+  api_id           = aws_apigatewayv2_api.websocket.id
+  integration_type = "AWS"
+  credentials_arn  = aws_iam_role.websocket.arn
+  integration_uri  = "arn:aws:apigateway:eu-central-1:dynamodb:action/DeleteItem"
 
   request_templates = {
     "application/json" = <<EOF
@@ -98,6 +129,7 @@ resource "aws_apigatewayv2_route_response" "websocket_disconnect" {
   route_id           = aws_apigatewayv2_route.websocket_disconnect.id
   route_response_key = "$default"
 }
+
 resource "aws_iam_role" "websocket" {
   name               = "websocket"
   assume_role_policy = <<EOF
@@ -125,36 +157,27 @@ resource "aws_iam_role_policy" "websocket" {
         {
             "Effect": "Allow",
             "Action": [
-                "*"
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem"
             ],
-            "Resource": "*"
+            "Resource": [
+              "${aws_dynamodb_table.websocket_connections.arn}"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lambda:InvokeFunction"
+            ],
+            "Resource": [
+              "${aws_lambda_function.lambda["lambda-api"].arn}",
+              "${aws_lambda_function.lambda["authorizer"].invoke_arn}"
+            ]
         }
     ]
 }
 EOF
 }
-
-resource "aws_apigatewayv2_deployment" "websocket_default" {
-  api_id      = aws_apigatewayv2_route.websocket_default.api_id
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-# resource "aws_apigatewayv2_deployment" "websocket_connect" {
-#   api_id      = aws_apigatewayv2_route.websocket_connect.api_id
-
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
-# resource "aws_apigatewayv2_deployment" "websocket_disconnect" {
-#   api_id      = aws_apigatewayv2_route.websocket_disconnect.api_id
-
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
 
 resource "aws_apigatewayv2_api_mapping" "websocket" {
   api_id      = aws_apigatewayv2_api.websocket.id
@@ -163,13 +186,16 @@ resource "aws_apigatewayv2_api_mapping" "websocket" {
 }
 
 resource "aws_apigatewayv2_stage" "websocket" {
-  api_id = aws_apigatewayv2_api.websocket.id
-  name   = "latest"
+  api_id      = aws_apigatewayv2_api.websocket.id
+  name        = "latest"
+  auto_deploy = true
 
   default_route_settings {
-    data_trace_enabled = true
-    throttling_rate_limit = 100
-    throttling_burst_limit = 50
+    data_trace_enabled       = true
+    detailed_metrics_enabled = true
+    logging_level            = "INFO"
+    throttling_rate_limit    = 100
+    throttling_burst_limit   = 50
   }
 }
 
@@ -195,18 +221,33 @@ resource "aws_route53_record" "websocket" {
 }
 
 resource "aws_dynamodb_table" "websocket_connections" {
-  name           = "websocket-connections"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "connection_id"
-  range_key      = "request_id"
-
-  attribute {
-    name = "request_id"
-    type = "S"
-  }
+  name         = "websocket-connections"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "connection_id"
 
   attribute {
     name = "connection_id"
     type = "S"
   }
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "user_id_index"
+    hash_key        = "user_id"
+    range_key       = "connection_id"
+    projection_type = "ALL"
+  }
+}
+
+resource "aws_apigatewayv2_authorizer" "websocket" {
+  api_id                     = aws_apigatewayv2_api.websocket.id
+  authorizer_type            = "REQUEST"
+  authorizer_uri             = aws_lambda_function.lambda["authorizer"].invoke_arn
+  authorizer_credentials_arn = aws_iam_role.websocket.arn
+  identity_sources           = ["route.request.querystring.token"]
+  name                       = "authorize-websocket"
 }

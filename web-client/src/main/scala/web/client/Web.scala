@@ -9,8 +9,12 @@ import outwatch.z._
 
 import cats.effect.SyncIO
 import zio._
+import zio.interop.catz._
+import zio.interop.catz.implicits._
 
 object Component {
+  implicit val r: Runtime[Any]              = Runtime.default
+  val F: cats.effect.ConcurrentEffect[Task] = implicitly
 
   val onEnter = onKeyUp.filter(_.key == "Enter")
 
@@ -19,7 +23,7 @@ object Component {
   }
 
   def checkedToEvent(todoId: TodoId): Boolean => Event = {
-    case true => Event.DoneTodo(todoId)
+    case true  => Event.DoneTodo(todoId)
     case false => Event.UndoneTodo(todoId)
   }
 
@@ -29,20 +33,23 @@ object Component {
     input(
       tpe := "text",
       placeholder := "Type Todo",
-      value <--[Observable] currentValue,
+      value <-- [Observable] currentValue,
       onInput.value --> currentValue,
       onEnter.value.collect(inputToEvent).via(currentValue.contramap[Any](_ => "")).mapSync(identity).dispatch,
     ),
-
     button(
       "Add Todo",
-      onClick.useLatest(currentValue).collect(inputToEvent).via(currentValue.contramap[Any](_ => "")).mapSync(identity).dispatch,
+      onClick
+        .useLatest(currentValue)
+        .collect(inputToEvent)
+        .via(currentValue.contramap[Any](_ => ""))
+        .mapSync(identity)
+        .dispatch,
     ),
   )
 
   def checkbox(todoList: TodoList, todoId: TodoId) = input(
     marginRight := "0px 10px",
-
     tpe := "checkbox",
     checked := todoList.isDone(todoId),
     onInput.checked.map(checkedToEvent(todoId)).dispatch,
@@ -50,7 +57,6 @@ object Component {
 
   def todoItem(todoList: TodoList, todo: Todo) = div(
     Modifier.ifTrue(todoList.isDone(todo.id))(opacity := 0.5),
-
     checkbox(todoList, todo.id),
     span(todo.content.text, marginRight := "20px"),
     button("Remove", onClick.use[Event](Event.RemoveTodo(todo.id)).dispatch),
@@ -64,10 +70,9 @@ object Component {
         b("Todos"),
         doneTodos.map(todoItem(todoList, _)),
       ),
-
       div(
         b("Done"),
-        undoneTodos.map(todoItem(todoList, _))
+        undoneTodos.map(todoItem(todoList, _)),
       ),
     )
   }
@@ -77,34 +82,39 @@ object Component {
       val auth = env.get[aws.Auth]
       auth.currentUser.map {
         case Some(user) => button(s"Logout (${user.info.email})", onClick.doAsync(auth.logout))
-        case None => button("Login", onClick.doAsync(auth.login))
+        case None       => button("Login", onClick.doAsync(auth.login))
       }
-    }
+    },
   )
 
   val apiInteraction: ModifierM[WebEnv] = div(
     ModifierM.accessM[WebEnv] { env =>
       ModifierM(
-        env.get[Api_].getState
-          .mapError(_.toString)
+        env
+          .get[Api_]
+          .getState
+          .mapError(x => new Exception(x.toString))
           .map(_.toString),
-        button("PRESS", onClick.doZIO(env.get[Api_].sendCommand(fun.api.Command.IncrementValue).mapError(_ => new Exception)))
+        button(
+          "PRESS",
+          onClick.doZIO(env.get[Api_].sendCommand(fun.api.Command.IncrementValue).mapError(_ => new Exception)),
+        ),
       )
-    }
+    },
   )
 
   val root = div(
     div(
-      login
+      login,
     ),
     div(
-      apiInteraction
+      apiInteraction,
     ),
     div(
-      inputMask
+      inputMask,
     ),
     div(
-      ModifierM.accessM[WebEnv](_.get[Config].todoList.map(todoItems))
+      ModifierM.accessM[WebEnv](_.get[Config].todoList.map(todoItems)),
     ),
   )
 }
