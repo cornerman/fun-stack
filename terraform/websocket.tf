@@ -171,6 +171,7 @@ resource "aws_iam_role_policy" "websocket" {
             ],
             "Resource": [
               "${aws_lambda_function.lambda["lambda-api"].arn}",
+              "${aws_lambda_function.lambda["authorizer"].arn}",
               "${aws_lambda_function.lambda["authorizer"].invoke_arn}"
             ]
         }
