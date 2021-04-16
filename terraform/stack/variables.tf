@@ -27,7 +27,7 @@ locals {
   domain_auth    = "auth.${var.domain}"
   domain_ws      = "api.${var.domain}"
 
-  api_zip_file = "api.zip"
+  api_zip_file = "${path.module}/api.zip"
 
   content_type_map = {
     html = "text/html",
