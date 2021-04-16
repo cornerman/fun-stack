@@ -2,8 +2,8 @@ locals {
   certificates = [aws_acm_certificate.website, aws_acm_certificate.auth, aws_acm_certificate.ws]
 }
 
-data "aws_route53_zone" "website" {
-  name = local.domain_website
+data "aws_route53_zone" "domain" {
+  name = var.domain
 }
 
 resource "aws_acm_certificate" "website" {
@@ -37,7 +37,7 @@ resource "aws_route53_record" "certificate_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = data.aws_route53_zone.website.zone_id
+  zone_id         = data.aws_route53_zone.domain.zone_id
 }
 
 resource "aws_acm_certificate_validation" "website" {

@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "user" {
-  name = "user"
+  name = "${var.name}-user"
 
   #TODO
   username_attributes      = ["email"]
@@ -25,7 +25,7 @@ resource "aws_cognito_user_pool" "user" {
   }
 }
 resource "aws_cognito_user_pool_client" "website_client" {
-  name         = "website-client"
+  name         = "${var.name}-website-client"
   user_pool_id = aws_cognito_user_pool.user.id
 
   allowed_oauth_flows_user_pool_client = true
@@ -56,7 +56,7 @@ resource "aws_cognito_user_pool_client" "website_client" {
 }
 
 resource "aws_cognito_identity_pool" "user" {
-  identity_pool_name = "user"
+  identity_pool_name = "${var.name}-user"
 
   allow_unauthenticated_identities = false
 
@@ -78,7 +78,7 @@ resource "aws_cognito_user_pool_domain" "user" {
 resource "aws_route53_record" "cognito" {
   name    = aws_cognito_user_pool_domain.user.domain
   type    = "A"
-  zone_id = data.aws_route53_zone.website.zone_id
+  zone_id = data.aws_route53_zone.domain.zone_id
   alias {
     evaluate_target_health = false
     name                   = aws_cognito_user_pool_domain.user.cloudfront_distribution_arn

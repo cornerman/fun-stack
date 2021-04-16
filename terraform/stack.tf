@@ -1,6 +1,8 @@
 module "fun" {
   source = "./stack/"
 
+  name = "fun"
+
   domain = "funstack.net"
 
   website = {

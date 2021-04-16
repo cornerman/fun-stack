@@ -214,7 +214,7 @@ resource "aws_apigatewayv2_domain_name" "websocket" {
 resource "aws_route53_record" "websocket" {
   name    = aws_apigatewayv2_domain_name.websocket.domain_name
   type    = "A"
-  zone_id = data.aws_route53_zone.website.zone_id
+  zone_id = data.aws_route53_zone.domain.zone_id
 
   alias {
     name                   = aws_apigatewayv2_domain_name.websocket.domain_name_configuration[0].target_domain_name

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "website" {
-  bucket_prefix = "website-"
+  bucket_prefix = "${var.name}-website"
   acl           = "private"
 }
 
@@ -31,7 +31,7 @@ EOF
 }
 
 resource "aws_cloudfront_origin_access_identity" "website" {
-  comment = "website"
+  comment = "${var.name}-website"
 }
 
 resource "aws_cloudfront_distribution" "website" {
@@ -95,7 +95,7 @@ resource "aws_cloudfront_distribution" "website" {
 resource "aws_route53_record" "website" {
   name    = local.domain_website
   type    = "A"
-  zone_id = data.aws_route53_zone.website.zone_id
+  zone_id = data.aws_route53_zone.domain.zone_id
   alias {
     evaluate_target_health = false
     name                   = aws_cloudfront_distribution.website.domain_name

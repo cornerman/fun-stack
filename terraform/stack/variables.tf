@@ -1,3 +1,7 @@
+variable "name" {
+  type = string
+}
+
 variable "domain" {
   type = string
 }
@@ -23,11 +27,15 @@ variable "api" {
 }
 
 locals {
-  domain_website = var.domain
-  domain_auth    = "auth.${var.domain}"
-  domain_ws      = "api.${var.domain}"
+  name = "${terraform.workspace}-${var.name}"
 
-  api_zip_file = "${path.module}/api.zip"
+  domain         = terraform.workspace == "default" ? var.domain : "${terraform.workspace}.env.${var.domain}"
+  domain_website = local.domain
+  domain_auth    = "auth.${local.domain}"
+  domain_ws      = "api.${local.domain}"
+
+  api_zip_file        = "${path.module}/api.zip"
+  authorizer_zip_file = "${path.module}/authorizer.zip"
 
   content_type_map = {
     html = "text/html",
