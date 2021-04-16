@@ -1,5 +1,5 @@
 resource "aws_cognito_user_pool" "user" {
-  name = "${var.name}-user"
+  name = "${local.prefix}-user"
 
   #TODO
   username_attributes      = ["email"]
@@ -25,7 +25,7 @@ resource "aws_cognito_user_pool" "user" {
   }
 }
 resource "aws_cognito_user_pool_client" "website_client" {
-  name         = "${var.name}-website-client"
+  name         = "${local.prefix}-website-client"
   user_pool_id = aws_cognito_user_pool.user.id
 
   allowed_oauth_flows_user_pool_client = true
@@ -56,7 +56,7 @@ resource "aws_cognito_user_pool_client" "website_client" {
 }
 
 resource "aws_cognito_identity_pool" "user" {
-  identity_pool_name = "${var.name}-user"
+  identity_pool_name = "${local.prefix}-user"
 
   allow_unauthenticated_identities = false
 

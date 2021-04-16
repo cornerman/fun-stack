@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "website" {
-  bucket_prefix = "${var.name}-website"
+  bucket_prefix = "${local.prefix}-website"
   acl           = "private"
 }
 
@@ -31,7 +31,7 @@ EOF
 }
 
 resource "aws_cloudfront_origin_access_identity" "website" {
-  comment = "${var.name}-website"
+  comment = "${local.prefix}-website"
 }
 
 resource "aws_cloudfront_distribution" "website" {

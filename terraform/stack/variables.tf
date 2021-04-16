@@ -27,7 +27,7 @@ variable "api" {
 }
 
 locals {
-  name = "${terraform.workspace}-${var.name}"
+  prefix = "${terraform.workspace}-${var.name}"
 
   domain         = terraform.workspace == "default" ? var.domain : "${terraform.workspace}.env.${var.domain}"
   domain_website = local.domain

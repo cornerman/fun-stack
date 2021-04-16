@@ -133,7 +133,7 @@ resource "aws_apigatewayv2_route_response" "websocket_disconnect" {
 }
 
 resource "aws_iam_role" "websocket" {
-  name               = "websocket"
+  name               = "${local.prefix}-websocket-api"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -224,7 +224,7 @@ resource "aws_route53_record" "websocket" {
 }
 
 resource "aws_dynamodb_table" "websocket_connections" {
-  name         = "websocket-connections"
+  name         = "${local.prefix}-websocket-connections"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "connection_id"
 
