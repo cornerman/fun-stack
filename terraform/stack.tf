@@ -18,4 +18,9 @@ module "fun" {
 
   auth = {
   }
+
+  dev_mode = terraform.workspace != "dev" ? null : {
+    local_website_url = "http://localhost:12345"
+    output_dir        = "../web-client/src/assetsDev/"
+  }
 }

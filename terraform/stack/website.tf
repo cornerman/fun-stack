@@ -118,18 +118,14 @@ resource "aws_s3_bucket_object" "website" {
 resource "aws_s3_bucket_object" "config_file" {
   bucket  = aws_s3_bucket.website.bucket
   key     = "app_config.js"
-  content = <<EOF
-window.AppConfig = {
-  "domain": "${local.domain_website}",
-  "domainAuth": "${local.domain_auth}",
-  "domainWS": "${local.domain_ws}",
-  "clientIdAuth": "${aws_cognito_user_pool_client.website_client.id}",
-  "region": "${data.aws_region.current.name}",
-  "identityPoolId": "${aws_cognito_identity_pool.user.id}",
-  "cognitoEndpoint": "${aws_cognito_user_pool.user.endpoint}"
-};
-EOF
+  content = local.app_config
 
   cache_control = "no-cache"
   content_type  = "application/javascript"
+}
+
+resource "local_file" "config_file" {
+  for_each = toset(var.dev_mode == null ? [] : ["0"])
+  filename = "${var.dev_mode.output_dir}/app_config.js"
+  content  = local.app_config
 }

@@ -21,7 +21,7 @@ trait TokenResponse extends js.Object {
   def access_token: String  = js.native
   def id_token: String      = js.native
   def refresh_token: String = js.native
-  def expires_in: String    = js.native
+  def expires_in: Double       = js.native
   def token_type: String    = js.native
 }
 
@@ -122,7 +122,7 @@ class Auth(val config: AuthConfig) {
           .switchMap { user =>
             localStorage.setItem(storageKeyRefreshToken, user.token.refresh_token)
             Observable
-              .interval((user.token.expires_in.toDouble * 0.8).seconds) // TODO: dynamic per token
+              .interval((user.token.expires_in * 0.8).seconds) // TODO: dynamic per token
               .drop(1)
               .mapAsync(_ => refreshToken(user.token.refresh_token))
               .map(token => Option(user.copy(token = token, credentials = credentials(token))))

@@ -156,11 +156,16 @@ lazy val root = project
   .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, lambdaApi, webClient)
 
 
-addCommandAlias("dev", "devInit; devWatchAll; devDestroy") // watch all
-addCommandAlias("devf", "devInit; devWatchClient; devDestroy") // only watch frontend
-addCommandAlias("deva", "devInit; devWatchApi; devDestroy") // only watch backend
-addCommandAlias("devInit", "webApi/reStart; webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")
-addCommandAlias("devWatchAll", "~; webApi/reStart; webClient/fastOptJS::webpack")
+addCommandAlias("dev", "devInit; devWatchClient; devDestroy")
+addCommandAlias("devInit", "webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")
 addCommandAlias("devWatchClient", "~webClient/fastOptJS::webpack")
-addCommandAlias("devWatchApi", "~webApi/reStart")
-addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer; webApi/reStop")
+addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer")
+
+/* addCommandAlias("dev", "devInit; devWatchAll; devDestroy") // watch all */
+/* addCommandAlias("devf", "devInit; devWatchClient; devDestroy") // only watch frontend */
+/* addCommandAlias("deva", "devInit; devWatchApi; devDestroy") // only watch backend */
+/* addCommandAlias("devInit", "webApi/reStart; webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer") */
+/* addCommandAlias("devWatchAll", "~; webApi/reStart; webClient/fastOptJS::webpack") */
+/* addCommandAlias("devWatchClient", "~webClient/fastOptJS::webpack") */
+/* addCommandAlias("devWatchApi", "~webApi/reStart") */
+/* addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer; webApi/reStop") */

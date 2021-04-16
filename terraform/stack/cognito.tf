@@ -47,12 +47,8 @@ resource "aws_cognito_user_pool_client" "website_client" {
   supported_identity_providers = [
     "COGNITO",
   ]
-  logout_urls = [
-    "https://${local.domain_website}",
-  ]
-  callback_urls = [
-    "https://${local.domain_website}",
-  ]
+  logout_urls   = local.redirect_urls
+  callback_urls = local.redirect_urls
 }
 
 resource "aws_cognito_identity_pool" "user" {
