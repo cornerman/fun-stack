@@ -4,4 +4,4 @@ cd "$(dirname $0)"
 
 yarn install
 yarn build
-zip index.zip index.js
+zip authorizer.zip index.js

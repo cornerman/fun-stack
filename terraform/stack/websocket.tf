@@ -56,7 +56,7 @@ resource "aws_apigatewayv2_integration" "websocket_default" {
   api_id           = aws_apigatewayv2_api.websocket.id
   integration_type = "AWS_PROXY"
   credentials_arn  = aws_iam_role.websocket.arn
-  integration_uri  = aws_lambda_function.lambda["lambda-api"].invoke_arn
+  integration_uri  = aws_lambda_function.api.invoke_arn
 }
 resource "aws_apigatewayv2_integration_response" "websocket_default" {
   api_id                   = aws_apigatewayv2_api.websocket.id
@@ -69,10 +69,11 @@ resource "aws_apigatewayv2_route_response" "websocket_default" {
   route_response_key = "$default"
 }
 resource "aws_apigatewayv2_integration" "websocket_connect" {
-  api_id           = aws_apigatewayv2_api.websocket.id
-  integration_type = "AWS"
-  credentials_arn  = aws_iam_role.websocket.arn
-  integration_uri  = "arn:aws:apigateway:eu-central-1:dynamodb:action/PutItem"
+  api_id             = aws_apigatewayv2_api.websocket.id
+  integration_type   = "AWS"
+  integration_method = "POST"
+  integration_uri    = "arn:aws:apigateway:eu-central-1:dynamodb:action/PutItem"
+  credentials_arn    = aws_iam_role.websocket.arn
 
   request_templates = {
     "application/json" = <<EOF
@@ -101,10 +102,11 @@ resource "aws_apigatewayv2_route_response" "websocket_connect" {
   route_response_key = "$default"
 }
 resource "aws_apigatewayv2_integration" "websocket_disconnect" {
-  api_id           = aws_apigatewayv2_api.websocket.id
-  integration_type = "AWS"
-  credentials_arn  = aws_iam_role.websocket.arn
-  integration_uri  = "arn:aws:apigateway:eu-central-1:dynamodb:action/DeleteItem"
+  api_id             = aws_apigatewayv2_api.websocket.id
+  integration_type   = "AWS"
+  integration_method = "POST"
+  integration_uri    = "arn:aws:apigateway:eu-central-1:dynamodb:action/DeleteItem"
+  credentials_arn    = aws_iam_role.websocket.arn
 
   request_templates = {
     "application/json" = <<EOF
@@ -170,9 +172,9 @@ resource "aws_iam_role_policy" "websocket" {
                 "lambda:InvokeFunction"
             ],
             "Resource": [
-              "${aws_lambda_function.lambda["lambda-api"].arn}",
-              "${aws_lambda_function.lambda["authorizer"].arn}",
-              "${aws_lambda_function.lambda["authorizer"].invoke_arn}"
+              "${aws_lambda_function.api.arn}",
+              "${aws_lambda_function.authorizer.arn}",
+              "${aws_lambda_function.authorizer.invoke_arn}"
             ]
         }
     ]
@@ -212,7 +214,7 @@ resource "aws_apigatewayv2_domain_name" "websocket" {
 resource "aws_route53_record" "websocket" {
   name    = aws_apigatewayv2_domain_name.websocket.domain_name
   type    = "A"
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = data.aws_route53_zone.website.zone_id
 
   alias {
     name                   = aws_apigatewayv2_domain_name.websocket.domain_name_configuration[0].target_domain_name
@@ -247,7 +249,7 @@ resource "aws_dynamodb_table" "websocket_connections" {
 resource "aws_apigatewayv2_authorizer" "websocket" {
   api_id                     = aws_apigatewayv2_api.websocket.id
   authorizer_type            = "REQUEST"
-  authorizer_uri             = aws_lambda_function.lambda["authorizer"].invoke_arn
+  authorizer_uri             = aws_lambda_function.authorizer.invoke_arn
   authorizer_credentials_arn = aws_iam_role.websocket.arn
   identity_sources           = ["route.request.querystring.token"]
   name                       = "authorize-websocket"

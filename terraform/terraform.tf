@@ -1,5 +1,9 @@
 terraform {
-  backend "local" {
+  backend "s3" {
+    encrypt = true
+    region  = "eu-central-1"
+    key     = "fun/my-app.tfstate"
+    bucket  = "funstack-tfstate"
   }
 
   required_version = "0.14.7"
@@ -13,7 +17,7 @@ terraform {
 }
 
 provider "aws" {
-  region = local.region
+  region = "eu-central-1"
 }
 
 provider "aws" {

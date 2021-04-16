@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "website" {
-  bucket = "${local.domain}-website"
-  acl    = "private"
+  bucket_prefix = "website-"
+  acl           = "private"
 }
 
 resource "aws_s3_bucket_policy" "website" {
@@ -54,12 +54,13 @@ resource "aws_cloudfront_distribution" "website" {
     response_page_path = "/error.html"
   }
 
-  aliases = [local.domain]
+  aliases = [local.domain_website]
 
+  #TODO
   price_class = "PriceClass_100"
 
   viewer_certificate {
-    acm_certificate_arn = aws_acm_certificate.main.arn
+    acm_certificate_arn = aws_acm_certificate.website.arn
     ssl_support_method  = "sni-only"
   }
 
@@ -92,9 +93,9 @@ resource "aws_cloudfront_distribution" "website" {
 }
 
 resource "aws_route53_record" "website" {
-  name    = local.domain
+  name    = local.domain_website
   type    = "A"
-  zone_id = data.aws_route53_zone.main.zone_id
+  zone_id = data.aws_route53_zone.website.zone_id
   alias {
     evaluate_target_health = false
     name                   = aws_cloudfront_distribution.website.domain_name
@@ -103,12 +104,12 @@ resource "aws_route53_record" "website" {
 }
 
 resource "aws_s3_bucket_object" "website" {
-  for_each = fileset(local.website_dir, "*")
+  for_each = fileset(var.website.source_dir, "*")
 
   bucket = aws_s3_bucket.website.bucket
   key    = each.key
-  source = "${local.website_dir}/${each.key}"
-  etag   = md5(file("${local.website_dir}/${each.key}"))
+  source = "${var.website.source_dir}/${each.key}"
+  etag   = md5(file("${var.website.source_dir}/${each.key}"))
 
   cache_control = "no-cache" # TODO
   content_type  = lookup(local.content_type_map, regex("\\.(?P<extension>[A-Za-z0-9.]+)$", each.key).extension, null)
@@ -119,16 +120,16 @@ resource "aws_s3_bucket_object" "config_file" {
   key     = "app_config.js"
   content = <<EOF
 window.AppConfig = {
-  "domain": "${local.domain}",
+  "domain": "${local.domain_website}",
   "domainAuth": "${local.domain_auth}",
   "domainWS": "${local.domain_ws}",
-  "clientIdAuth": "${aws_cognito_user_pool_client.client.id}",
-  "region": "${local.region}",
+  "clientIdAuth": "${aws_cognito_user_pool_client.website_client.id}",
+  "region": "${data.aws_region.current.name}",
   "identityPoolId": "${aws_cognito_identity_pool.user.id}",
   "cognitoEndpoint": "${aws_cognito_user_pool.user.endpoint}"
 };
 EOF
 
-  cache_control = "no-cache" # TODO
+  cache_control = "no-cache"
   content_type  = "application/javascript"
 }

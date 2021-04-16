@@ -14,7 +14,7 @@ import facade.amazonaws.services.sts._
 import org.scalajs.dom.window.localStorage
 
 import scala.concurrent.duration._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.ExecutionContext
 
 @js.native
 trait TokenResponse extends js.Object {
@@ -74,28 +74,28 @@ class Auth(val config: AuthConfig) {
 
   private var currentUserVariable: Option[User] = None
 
-  def signUrl(credentials: AWSCredentials, url: Url): Future[String] = {
-    credentials
-      .refreshPromise()
-      .`then`[String] { _ =>
-        AWS4
-          .sign(
-            new AWS4SignOptions {
-              val host      = url.value
-              val path      = s"?X-Amz-Security-Token=${js.URIUtils.encodeURIComponent(credentials.sessionToken)}"
-              val service   = "execute-api"
-              val region    = config.region.value
-              val signQuery = true
-            },
-            new AWS4SignParams {
-              val accessKeyId     = credentials.accessKeyId
-              val secretAccessKey = credentials.secretAccessKey
-            },
-          )
-          .path
-      }
-      .toFuture
-  }
+  // def signUrl(credentials: AWSCredentials, url: Url): Future[String] = {
+  //   credentials
+  //     .refreshPromise()
+  //     .`then`[String] { _ =>
+  //       AWS4
+  //         .sign(
+  //           new AWS4SignOptions {
+  //             val host      = url.value
+  //             val path      = s"?X-Amz-Security-Token=${js.URIUtils.encodeURIComponent(credentials.sessionToken)}"
+  //             val service   = "execute-api"
+  //             val region    = config.region.value
+  //             val signQuery = true
+  //           },
+  //           new AWS4SignParams {
+  //             val accessKeyId     = credentials.accessKeyId
+  //             val secretAccessKey = credentials.secretAccessKey
+  //           },
+  //         )
+  //         .path
+  //     }
+  //     .toFuture
+  // }
 
   def login: IO[Unit] = IO {
     val url = s"${config.baseUrl.value}/login?response_type=code&client_id=${config.clientId.value}&redirect_uri=${config.redirectUrl.value}"
@@ -104,8 +104,7 @@ class Auth(val config: AuthConfig) {
 
   def logout: IO[Unit] = IO {
     localStorage.removeItem(storageKeyRefreshToken)
-    val url =
-      s"${config.baseUrl.value}/logout?client_id=${config.clientId.value}&logout_uri=${config.redirectUrl.value}"
+    val url = s"${config.baseUrl.value}/logout?client_id=${config.clientId.value}&logout_uri=${config.redirectUrl.value}"
     dom.window.location.href = url
   }
 
