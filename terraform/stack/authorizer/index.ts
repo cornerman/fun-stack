@@ -55,12 +55,18 @@ interface Claim {
     token_use: string;
     auth_time: number;
     iss: string;
+    iat: number
     exp: number;
-    username: string;
     client_id: string;
+    jti: string;
+    scope: string;
+    sub: string
+    username: string;
+    version: number;
 }
 
 const cognitoPoolId = process.env.COGNITO_POOL_ID!;
+const cognitoApiScopes = process.env.COGNITO_API_SCOPES!;
 const awsRegion = process.env.AWS_REGION!;
 const cognitoIssuer = `https://cognito-idp.${awsRegion}.amazonaws.com/${cognitoPoolId}`;
 
@@ -114,6 +120,9 @@ const handler = async (request: ClaimVerifyRequest): Promise<ClaimVerifyResult> 
         const currentSeconds = Math.floor((new Date()).valueOf() / 1000);
         if (currentSeconds > claim.exp || currentSeconds < claim.auth_time) {
             throw new Error('claim is expired or invalid');
+        }
+        if (!cognitoApiScopes.split(" ").every(scope => claim.scope.split(" ").some(s => s == scope))) {
+            throw new Error(`claim misses scope, required: ${cognitoApiScopes}`);
         }
         if (claim.iss !== cognitoIssuer) {
             throw new Error('claim issuer is invalid');
