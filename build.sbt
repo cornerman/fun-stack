@@ -158,7 +158,7 @@ lazy val root = project
 
 addCommandAlias("dev", "devInit; devWatchClient; devDestroy")
 addCommandAlias("devInit", "webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")
-addCommandAlias("devWatchClient", "~webClient/fastOptJS::webpack")
+addCommandAlias("devWatchClient", "~webClient/fastOptJS")
 addCommandAlias("devDestroy", "webClient/fastOptJS::stopWebpackDevServer")
 
 /* addCommandAlias("dev", "devInit; devWatchAll; devDestroy") // watch all */
