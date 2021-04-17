@@ -6,10 +6,19 @@ variable "domain" {
   type = string
 }
 
-variable "dev_mode" {
+variable "prod_workspace" {
+  type    = string
+  default = "prod"
+}
+variable "dev_workspaces" {
+  type    = list(string)
+  default = ["dev"]
+}
+
+variable "dev_setup" {
   type = object({
     local_website_url = string
-    output_dir        = string
+    config_output_dir = string
   })
   default = null
 }
@@ -29,6 +38,7 @@ variable "api" {
   type = object({
     source_dir  = string
     handler     = string
+    runtime     = string
     timeout     = number
     memory_size = number
   })
@@ -37,13 +47,15 @@ variable "api" {
 locals {
   prefix = "${var.name}-${terraform.workspace}"
 
-  domain         = terraform.workspace == "default" ? var.domain : "${terraform.workspace}.env.${var.domain}"
+  is_dev = var.dev_setup != null && contains(var.dev_workspaces, terraform.workspace)
+
+  domain         = terraform.workspace == var.prod_workspace ? var.domain : "${terraform.workspace}.env.${var.domain}"
   domain_website = local.domain
   domain_auth    = "auth.${local.domain}"
   domain_ws      = "api.${local.domain}"
   redirect_urls = concat(
     ["https://${local.domain_website}"],
-    var.dev_mode == null ? [] : [var.dev_mode.local_website_url]
+    local.is_dev ? [var.dev_setup.local_website_url] : []
   )
 
   api_zip_file        = "${path.module}/api.zip"

@@ -12,6 +12,7 @@ module "fun" {
   api = {
     source_dir  = "../lambda-api/target/scala-2.13/scalajs-bundler/main/"
     handler     = "lambdaapi-opt.handler"
+    runtime     = "nodejs14.x"
     timeout     = 30
     memory_size = 256
   }
@@ -19,8 +20,11 @@ module "fun" {
   auth = {
   }
 
-  dev_mode = terraform.workspace != "dev" ? null : {
+  # prod_workspace = "default"
+  # dev_workspaces = ["dev"]
+
+  dev_setup = {
     local_website_url = "http://localhost:12345"
-    output_dir        = "../web-client/src/assetsDev/"
+    config_output_dir = "../web-client/src/assetsDev/"
   }
 }

@@ -17,7 +17,7 @@ resource "aws_lambda_function" "api" {
   memory_size = var.api.memory_size
   publish     = true
 
-  runtime          = "nodejs14.x"
+  runtime          = var.api.runtime
   handler          = var.api.handler
   filename         = local.api_zip_file
   source_code_hash = data.archive_file.api.output_base64sha256
