@@ -37,9 +37,16 @@ object Deps {
     val zio             = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
 
+  // websocket connecitivity
+  val mycelium = new {
+    private val version = "f95f84c"
+    val core            = dep("com.github.cornerman.mycelium" %%% "mycelium-core" % version)
+    val clientJs        = dep("com.github.cornerman.mycelium" %%% "mycelium-client-js" % version)
+  }
+
   // utils
   val jsrequests = dep("com.github.cornerman.simple-scalajs-requests" %%% "requests" % "b27f25b")
-  val cuid       = dep("io.github.cornerman.scala-cuid" %%% "scala-cuid" % "f1f7638")
+  val cuid       = dep("com.github.cornerman.scala-cuid" %%% "scala-cuid" % "f1f7638")
   val base64     = dep("com.github.marklister" %%% "base64" % "0.3.0")
   val newtype    = dep("io.estatico" %%% "newtype" % "0.4.4")
 

@@ -20,8 +20,8 @@ module "fun" {
   auth = {
   }
 
-  # prod_workspace = "default"
-  # dev_workspaces = ["dev"]
+  prod_workspace = "default"
+  dev_workspaces = ["dev"]
 
   dev_setup = {
     local_website_url = "http://localhost:12345"

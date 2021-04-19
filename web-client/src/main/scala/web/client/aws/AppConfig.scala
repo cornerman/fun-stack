@@ -1,4 +1,4 @@
-package fun.web.client
+package fun.web.client.aws
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSGlobal

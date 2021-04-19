@@ -137,6 +137,7 @@ lazy val webClient = project
       Deps.cuid.value ::
       Deps.outwatch.core.value ::
       Deps.outwatch.zio.value ::
+      Deps.mycelium.clientJs.value ::
       Deps.base64.value ::
       Deps.awsSdkJS.value ::
       Deps.newtype.value ::

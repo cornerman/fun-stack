@@ -21,17 +21,6 @@ object Main extends App {
       .provideCustomLayer(appLayer)
       .exitCode
 
-  private val auth = new Auth(
-    AuthConfig(
-      baseUrl = Url(s"https://${AppConfig.domainAuth}"),
-      redirectUrl = Url(dom.window.location.origin.getOrElse(AppConfig.domain)),
-      clientId = ClientId(AppConfig.clientIdAuth),
-      region = Region(AppConfig.region),
-      identityPoolId = IdentityPoolId(AppConfig.identityPoolId),
-      cognitoEndpoint = Url(AppConfig.cognitoEndpoint),
-    ),
-  )
-
   private val config = for {
     todoList <- ZIO(Subject.behavior(TodoList.initial))
     config  = Config(todoList)
@@ -40,8 +29,7 @@ object Main extends App {
 
   private val appLayer =
     ZLayer.fromEffectMany(config) ++
-      ZLayer.succeed[Api_](LambdaClient.api) ++
-      ZLayer.succeed[Auth](auth) ++
+      ZLayer.succeed[Api_](WsClient.api) ++
       ZLayer.succeed[Platform](Platform.default)
 
   private val render = ZIO.accessM[WebEnv] { env =>

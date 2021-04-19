@@ -1,6 +1,7 @@
 package fun.web.client
 
 import fun.web.client.data._
+import fun.web.client.aws.Fun
 
 import colibri._
 import outwatch._
@@ -79,10 +80,9 @@ object Component {
 
   val login = div(
     ModifierM.access[WebEnv] { env =>
-      val auth = env.get[aws.Auth]
-      auth.currentUser.map {
-        case Some(user) => button(s"Logout (${user.info.email})", onClick.doAsync(auth.logout))
-        case None       => button("Login", onClick.doAsync(auth.login))
+      Fun.auth.currentUser.map {
+        case Some(user) => button(s"Logout (${user.info.email})", onClick.doAsync(Fun.auth.logout))
+        case None       => button("Login", onClick.doAsync(Fun.auth.login))
       }
     },
   )
@@ -93,11 +93,11 @@ object Component {
         env
           .get[Api_]
           .getState
-          .mapError(x => new Exception(x.toString))
+          // .mapError(x => new Exception(x.toString))
           .map(_.toString),
         button(
           "PRESS",
-          onClick.doZIO(env.get[Api_].sendCommand(fun.api.Command.IncrementValue).mapError(_ => new Exception)),
+          onClick.doAsync(env.get[Api_].sendCommand(fun.api.Command.IncrementValue)),
         ),
       )
     },

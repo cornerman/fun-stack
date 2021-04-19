@@ -21,7 +21,7 @@ trait TokenResponse extends js.Object {
   def access_token: String  = js.native
   def id_token: String      = js.native
   def refresh_token: String = js.native
-  def expires_in: Double       = js.native
+  def expires_in: Double    = js.native
   def token_type: String    = js.native
 }
 
@@ -36,7 +36,7 @@ trait UserInfoResponse extends js.Object {
 case class User(
     info: UserInfoResponse,
     token: TokenResponse,
-    credentials: AWSCredentials,
+    // credentials: AWSCredentials,
 )
 
 case class AuthConfig(
@@ -108,7 +108,15 @@ class Auth(val config: AuthConfig) {
     dom.window.location.href = url
   }
 
-  val currentUserNow: IO[Option[User]] = IO(currentUserVariable) // TODO currentUser.headIO
+  //TODO headIO colibri
+  val currentUserHead: IO[Option[User]] = IO.cancelable[Option[User]] { cb =>
+    val cancelable = colibri.Cancelable.variable()
+    cancelable() = currentUser.foreach { user =>
+      cancelable.cancel()
+      cb(Right(user))
+    }
+    IO(cancelable.cancel())
+  }
 
   val currentUser: Observable[Option[User]] =
     authentication
@@ -118,14 +126,14 @@ class Auth(val config: AuthConfig) {
             case Authentication.AuthCode(code)      => getToken(code)
             case Authentication.RefreshToken(token) => refreshToken(token)
           }
-          .mapAsync(token => getUserInfo(token).map(info => User(info, token, credentials(token))))
+          .mapAsync(token => getUserInfo(token).map(info => User(info, token)))
           .switchMap { user =>
             localStorage.setItem(storageKeyRefreshToken, user.token.refresh_token)
             Observable
               .interval((user.token.expires_in * 0.8).seconds) // TODO: dynamic per token
               .drop(1)
               .mapAsync(_ => refreshToken(user.token.refresh_token))
-              .map(token => Option(user.copy(token = token, credentials = credentials(token))))
+              .map(token => Option(user.copy(token = token)))
               .prepend(Option(user))
           }
           .recover { case t =>
@@ -137,15 +145,6 @@ class Auth(val config: AuthConfig) {
         case Some(user) =>
           dom.console.log(user.token)
           dom.console.log(user.info)
-          dom.console.log(user.credentials)
-          val sts = new STS(AWSConfig(region = "eu-central-1", credentials = user.credentials))
-          val r   = GetCallerIdentityRequest()
-          import scala.util._
-          import scala.concurrent.ExecutionContext.Implicits.global
-          sts.getCallerIdentityFuture(r).onComplete {
-            case Success(r) => dom.console.log("IDENTITY", r)
-            case Failure(r) => dom.console.log("IDENTITYerror", r)
-          }
         case None =>
           dom.console.log("Nope")
       }
@@ -153,15 +152,15 @@ class Auth(val config: AuthConfig) {
       .replay
       .hot
 
-  private def credentials(token: TokenResponse) = CognitoIdentityCredentials(
-    new CognitoIdentityCredentialsParams {
-      IdentityPoolId = config.identityPoolId.value
-      Logins = js.Dynamic.literal(config.cognitoEndpoint.value -> token.id_token)
-    },
-    new CognitoIdentityCredentialsClientConfig {
-      region = config.region.value
-    },
-  )
+  // private def credentials(token: TokenResponse) = CognitoIdentityCredentials(
+  //   new CognitoIdentityCredentialsParams {
+  //     IdentityPoolId = config.identityPoolId.value
+  //     Logins = js.Dynamic.literal(config.cognitoEndpoint.value -> token.id_token)
+  //   },
+  //   new CognitoIdentityCredentialsClientConfig {
+  //     region = config.region.value
+  //   },
+  // )
 
   private def getUserInfo(token: TokenResponse): IO[UserInfoResponse] = IO
     .fromFuture(IO {
