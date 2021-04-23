@@ -67,6 +67,7 @@ interface Claim {
 
 const cognitoPoolId = process.env.COGNITO_POOL_ID!;
 const cognitoApiScopes = process.env.COGNITO_API_SCOPES!;
+const allowUnauthenticated = process.env.ALLOW_UNAUTHENTICATED! === "true";
 const awsRegion = process.env.AWS_REGION!;
 const cognitoIssuer = `https://cognito-idp.${awsRegion}.amazonaws.com/${cognitoPoolId}`;
 
@@ -105,7 +106,19 @@ const handler = async (request: ClaimVerifyRequest): Promise<ClaimVerifyResult> 
     try {
         console.log(`user claim verify invoked for ${JSON.stringify(request)}`);
         const token = request.queryStringParameters.token;
-        const tokenSections = (token || '').split('.');
+        if (!token) {
+            if (allowUnauthenticated) {
+                return {
+                    principalId: 'anon',
+                    policyDocument: generatePolicy(request.methodArn, "Allow"),
+                    context: null
+                }
+            }
+
+            throw new Error('token is empty');
+        }
+
+        const tokenSections = token.split('.');
         if (tokenSections.length < 2) {
             throw new Error('requested token is invalid');
         }
@@ -138,7 +151,7 @@ const handler = async (request: ClaimVerifyRequest): Promise<ClaimVerifyResult> 
             context: claim
         };
     } catch (error) {
-        console.error("Failed to verify", error);
+        console.error("Failed to verify token", error);
         return {
             principalId: null,
             policyDocument: generatePolicy(request.methodArn, "Deny"),

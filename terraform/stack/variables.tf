@@ -23,6 +23,11 @@ variable "dev_setup" {
   default = null
 }
 
+variable "allow_unauthenticated" {
+  type    = bool
+  default = false
+}
+
 variable "auth" {
   type = object({
   })
