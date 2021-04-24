@@ -25,39 +25,44 @@ object Deps {
 
   // web server
   val http4s = new {
-    private val version = "1.0.0-M3"
-    val server          = dep("org.http4s" %% "http4s-blaze-server" % version)
-    val dsl             = dep("org.http4s" %% "http4s-dsl" % version)
+    val version = "1.0.0-M3"
+    val server  = dep("org.http4s" %% "http4s-blaze-server" % version)
+    val dsl     = dep("org.http4s" %% "http4s-dsl" % version)
   }
 
   // web app
   val outwatch = new {
-    private val version = "d9b5d516"
-    val core            = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
-    val zio             = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
+    val version = "d9b5d516"
+    val core    = dep("com.github.cornerman.outwatch" %%% "outwatch" % version)
+    val zio     = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
 
   // websocket connecitivity
   val mycelium = new {
-    private val version = "f95f84c"
-    val core            = dep("com.github.cornerman.mycelium" %%% "mycelium-core" % version)
-    val clientJs        = dep("com.github.cornerman.mycelium" %%% "mycelium-client-js" % version)
+    val version  = "2a7a14c"
+    val core     = dep("com.github.cornerman.mycelium" %%% "mycelium-core" % version)
+    val clientJs = dep("com.github.cornerman.mycelium" %%% "mycelium-client-js" % version)
   }
 
   // utils
   val jsrequests = dep("com.github.cornerman.simple-scalajs-requests" %%% "requests" % "b27f25b")
   val cuid       = dep("com.github.cornerman.scala-cuid" %%% "scala-cuid" % "f1f7638")
   val base64     = dep("com.github.marklister" %%% "base64" % "0.3.0")
-  val newtype    = dep("io.estatico" %%% "newtype" % "0.4.4")
 
   // aws-sdk-js
-  val awsSdkJS    = dep("net.exoego" %%% "aws-sdk-scalajs-facade" % "0.32.0-v2.798.0")
+  val awsSdkJS = new {
+    val version         = s"0.32.0-v${NpmDeps.awsSdkVersion}"
+    val lambda          = dep("net.exoego" %%% "aws-sdk-scalajs-facade-lambda" % version)
+    val sts             = dep("net.exoego" %%% "aws-sdk-scalajs-facade-sts" % version)
+    val cognitoidentity = dep("net.exoego" %%% "aws-sdk-scalajs-facade-cognitoidentity" % version)
+  }
   val awsLambdaJS = dep("net.exoego" %%% "aws-lambda-scalajs-facade" % "0.11.0")
 }
 
 object NpmDeps {
-  val awsSdk = "aws-sdk" -> "2.798.0"
-  val aws4   = "aws4"    -> "1.11.0"
+  val awsSdkVersion = "2.798.0"
+  val awsSdk        = "aws-sdk" -> awsSdkVersion
+  val aws4          = "aws4"    -> "1.11.0"
 
   val webpackDependencies =
     "copy-webpack-plugin"    -> "5.0.0" ::

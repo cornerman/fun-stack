@@ -59,7 +59,7 @@ resource "aws_apigatewayv2_integration" "websocket_default" {
   integration_type = "AWS_PROXY"
   credentials_arn  = aws_iam_role.websocket.arn
   integration_uri  = aws_lambda_function.api.invoke_arn
-  # content_handling = "CONVERT_TO_BINARY"
+  # content_handling_strategy = "CONVERT_TO_BINARY"
 }
 resource "aws_apigatewayv2_integration_response" "websocket_default" {
   api_id                   = aws_apigatewayv2_api.websocket.id

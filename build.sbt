@@ -112,14 +112,19 @@ lazy val lambdaApi = project
       "dev.zio" %%% "zio" % "1.0.1" ::
       "dev.zio" %%% "zio-interop-cats" % "2.1.4.0" ::
       Deps.boopickle.value ::
+      Deps.mycelium.core.value ::
+      "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
       Deps.base64.value ::
-      Deps.awsSdkJS.value ::
+      Deps.awsSdkJS.lambda.value ::
       Deps.awsLambdaJS.value ::
       Nil,
 
-    npmDependencies in Compile ++=
-      NpmDeps.awsSdk ::
-      Nil
+    // The aws-sdk is provided in lambda environment.
+    // Not depending on it explicitly makes the bundle size smaller.
+    // But we do not know whether our facades are on the correct version.
+    /* npmDependencies in Compile ++= */
+    /*   NpmDeps.awsSdk :: */
+    /*   Nil */
   )
 
 lazy val webClient = project
@@ -138,9 +143,10 @@ lazy val webClient = project
       Deps.outwatch.core.value ::
       Deps.outwatch.zio.value ::
       Deps.mycelium.clientJs.value ::
+      "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
       Deps.base64.value ::
-      Deps.awsSdkJS.value ::
-      Deps.newtype.value ::
+      Deps.awsSdkJS.sts.value ::
+      Deps.awsSdkJS.cognitoidentity.value ::
       Nil,
 
     npmDependencies in Compile ++=

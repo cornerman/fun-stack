@@ -9,6 +9,7 @@ import mycelium.core.message.{ServerMessage, ClientMessage}
 import chameleon.{Serializer, Deserializer}
 import cats.effect.IO
 import scala.concurrent.duration._
+import colibri.Observable
 
 case class WebsocketConfig(
     baseUrl: Url,
@@ -61,7 +62,7 @@ class Websocket(val config: WebsocketConfig) {
         .subscribe(colibri.Observer.empty)
 
       def apply(request: Request[PickleType]): IO[PickleType] =
-        IO.fromFuture(IO(client.send(request.path, request.payload, SendType.NowOrFail, 30.seconds)))
+        IO.fromFuture(IO(client.send(request.path, request.payload, SendType.WhenConnected, 30.seconds)))
           .flatMap {
             case Right(value) => IO.pure(value)
             case Left(error)  => IO.raiseError(new Exception(s"Request failed: $error"))
