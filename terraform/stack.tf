@@ -20,6 +20,8 @@ module "fun" {
   auth = {
   }
 
+  allow_unauthenticated = true
+
   prod_workspace = "default"
   dev_workspaces = ["dev"]
 

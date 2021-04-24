@@ -1,5 +1,5 @@
 resource "aws_apigatewayv2_api" "websocket" {
-  name                       = "websocket"
+  name                       = "${local.prefix}-websocket"
   protocol_type              = "WEBSOCKET"
   route_selection_expression = "$request.body.action"
 }
@@ -29,6 +29,7 @@ resource "aws_apigatewayv2_route" "websocket_disconnect" {
 
   target = "integrations/${aws_apigatewayv2_integration.websocket_disconnect.id}"
 }
+
 resource "aws_apigatewayv2_integration" "websocket_ping" {
   api_id           = aws_apigatewayv2_api.websocket.id
   integration_type = "MOCK"
@@ -52,11 +53,13 @@ resource "aws_apigatewayv2_route_response" "websocket_ping" {
   route_id           = aws_apigatewayv2_route.websocket_ping.id
   route_response_key = "$default"
 }
+
 resource "aws_apigatewayv2_integration" "websocket_default" {
   api_id           = aws_apigatewayv2_api.websocket.id
   integration_type = "AWS_PROXY"
   credentials_arn  = aws_iam_role.websocket.arn
   integration_uri  = aws_lambda_function.api.invoke_arn
+  # content_handling = "CONVERT_TO_BINARY"
 }
 resource "aws_apigatewayv2_integration_response" "websocket_default" {
   api_id                   = aws_apigatewayv2_api.websocket.id
@@ -68,11 +71,12 @@ resource "aws_apigatewayv2_route_response" "websocket_default" {
   route_id           = aws_apigatewayv2_route.websocket_default.id
   route_response_key = "$default"
 }
+
 resource "aws_apigatewayv2_integration" "websocket_connect" {
   api_id             = aws_apigatewayv2_api.websocket.id
   integration_type   = "AWS"
   integration_method = "POST"
-  integration_uri    = "arn:aws:apigateway:eu-central-1:dynamodb:action/PutItem"
+  integration_uri    = "arn:aws:apigateway:${data.aws_region.current.name}:dynamodb:action/PutItem"
   credentials_arn    = aws_iam_role.websocket.arn
 
   request_templates = {
@@ -101,11 +105,12 @@ resource "aws_apigatewayv2_route_response" "websocket_connect" {
   route_id           = aws_apigatewayv2_route.websocket_connect.id
   route_response_key = "$default"
 }
+
 resource "aws_apigatewayv2_integration" "websocket_disconnect" {
   api_id             = aws_apigatewayv2_api.websocket.id
   integration_type   = "AWS"
   integration_method = "POST"
-  integration_uri    = "arn:aws:apigateway:eu-central-1:dynamodb:action/DeleteItem"
+  integration_uri    = "arn:aws:apigateway:${data.aws_region.current.name}:dynamodb:action/DeleteItem"
   credentials_arn    = aws_iam_role.websocket.arn
 
   request_templates = {
