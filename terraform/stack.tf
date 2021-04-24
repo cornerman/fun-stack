@@ -1,5 +1,5 @@
 module "fun" {
-  source = "./stack/"
+  source = "github.com/cornerman/fun-stack-tf"
 
   name = "fun"
 
