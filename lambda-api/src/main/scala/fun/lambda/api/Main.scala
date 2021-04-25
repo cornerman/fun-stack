@@ -6,68 +6,60 @@ import net.exoego.facade.aws_lambda._
 import zio._
 import zio.console._
 import com.github.marklister.base64.Base64._
+import cats.Functor
+import cats.implicits._
 
 import scala.scalajs.js
 import mycelium.core.message._
 
 object Helper {
-  import chameleon.Serializer
+  import chameleon.{Serializer, Deserializer}
+  import sloth._
 
-  def toResult[T: Serializer[?, String]](message: T) = {
-    val serialized = Serializer[T, String].serialize(message)
-    APIGatewayProxyStructuredResultV2(body = serialized, statusCode = 200)
+  def handle[T, Event](router: Router[T, ApiResult])(
+      event: APIGatewayWSEvent,
+  )(implicit deserializer: Deserializer[ClientMessage[T], String], serializer: Serializer[ServerMessage[T, Event, ApiError], String]) = {
+    val result = Deserializer[ClientMessage[T], String].deserialize(event.body) match {
+      case Left(error) => ZIO.fail(new Exception(s"Deserializer: $error"))
+      case Right(Ping) => ZIO.succeed(Pong)
+      case Right(CallRequest(seqNumber, path, payload)) =>
+        router(Request(path, payload)) match {
+          case RouterResult.Success(_, result) => result.map(_.serialized).either.map(CallResponse(seqNumber, _))
+          case RouterResult.Failure(_, result) => ZIO.succeed(CallResponse(seqNumber, Left(ApiError.ServerFailure(result.toString))))
+        }
+    }
+
+    result
+      .map(Serializer[ServerMessage[T, Event, ApiError], String].serialize)
+      .map(payload => APIGatewayProxyStructuredResultV2(body = payload, statusCode = 200))
+      .catchAllDefect(e => ZIO.succeed(APIGatewayProxyStructuredResultV2(body = e.toString, statusCode = 500)))
   }
 }
-import Helper._
-import aws.Base64Serdes._
 
 object Main {
   import java.nio.ByteBuffer
   import boopickle._
   import boopickle.Default._
+  import chameleon.ext.boopickle._
+  import fun.lambda.api.aws.Base64Serdes._
+  import Helper._
+  import zio.interop.catz._
+  import zio.interop.catz.implicits._
 
   @js.annotation.JSExportTopLevel("handler")
   def handler(event: APIGatewayWSEvent, context: Context): js.Promise[APIGatewayProxyStructuredResultV2] = {
-    val handler = appLogic(event, context)
-      .catchAllDefect(e => ZIO.succeed(APIGatewayProxyStructuredResultV2(body = e.toString, statusCode = 500)))
+    import scala.scalajs.js.JSConverters._
+    import scala.concurrent.ExecutionContext.Implicits.global
+    Runtime.default.unsafeRunToFuture(appLogic(event, context)).toJSPromise
+  }
+
+  def appLogic(event: APIGatewayWSEvent, context: Context) =
+    handle[ByteBuffer, String](sloth.Router[ByteBuffer, ApiResult].route(ApiLive))(event)
       .provideCustomLayer(cachedAppLayer)
       .tap(response => putStrLn(js.JSON.stringify(response)))
 
-    import scala.scalajs.js.JSConverters._
-    import scala.concurrent.ExecutionContext.Implicits.global
-    Runtime.default.unsafeRunToFuture(handler).toJSPromise
-  }
-
-  def deserializeEventPayload(event: APIGatewayWSEvent) = for {
-    byteArray <- Task(event.body.toByteArray)
-    message   <- Task(Unpickle[ClientMessage[ByteBuffer]].fromBytes(ByteBuffer.wrap(byteArray)))
-  } yield message
-
-  def appLogic(event: APIGatewayWSEvent, context: Context) = for {
-    message  <- deserializeEventPayload(event)
-    response <- onMessage(message)
-  } yield toResult(response)
-
-  def onMessage(message: ClientMessage[ByteBuffer]) = message match {
-    case Ping => ZIO.succeed(Pong)
-    case CallRequest(seqNumber, path, payload) =>
-      for {
-        response <- Server.handle(path.toList, payload).either
-      } yield CallResponse(seqNumber, response)
-  }
-
-  def byteBufferToArray(bytes: ByteBuffer): Array[Byte] =
-    if (bytes.hasArray) bytes.array
-    else {
-      val array = new Array[Byte](bytes.remaining)
-      bytes.rewind()
-      bytes.get(array)
-      array
-    }
-
   val appLayer =
-    ZLayer.succeed[Api_](ApiLive) ++
-      ZLayer.fromEffect[Any, Nothing, Database](DatabaseLive.create)
+    ZLayer.fromEffect[Any, Nothing, Database](DatabaseLive.create)
 
   val cachedAppLayer = Runtime.default.unsafeRunTask(appLayer.memoize.useNow)
 }
