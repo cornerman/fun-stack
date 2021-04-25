@@ -16,9 +16,9 @@ object Helper {
   import chameleon.{Serializer, Deserializer}
   import sloth._
 
-  def handle[T, Event](router: Router[T, ApiResult])(
+  def handle[T](router: Router[T, ApiResult])(
       event: APIGatewayWSEvent,
-  )(implicit deserializer: Deserializer[ClientMessage[T], String], serializer: Serializer[ServerMessage[T, Event, ApiError], String]) = {
+  )(implicit deserializer: Deserializer[ClientMessage[T], String], serializer: Serializer[ServerMessage[T, Nothing, ApiError], String]) = {
     val result = Deserializer[ClientMessage[T], String].deserialize(event.body) match {
       case Left(error) => ZIO.fail(new Exception(s"Deserializer: $error"))
       case Right(Ping) => ZIO.succeed(Pong)
@@ -30,7 +30,7 @@ object Helper {
     }
 
     result
-      .map(Serializer[ServerMessage[T, Event, ApiError], String].serialize)
+      .map(Serializer[ServerMessage[T, Nothing, ApiError], String].serialize)
       .map(payload => APIGatewayProxyStructuredResultV2(body = payload, statusCode = 200))
       .catchAllDefect(e => ZIO.succeed(APIGatewayProxyStructuredResultV2(body = e.toString, statusCode = 500)))
   }
@@ -54,7 +54,7 @@ object Main {
   }
 
   def appLogic(event: APIGatewayWSEvent, context: Context) =
-    handle[ByteBuffer, String](sloth.Router[ByteBuffer, ApiResult].route(ApiLive))(event)
+    handle(sloth.Router[ByteBuffer, ApiResult].route(ApiLive))(event)
       .provideCustomLayer(cachedAppLayer)
       .tap(response => putStrLn(js.JSON.stringify(response)))
 
