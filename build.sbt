@@ -4,13 +4,13 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 inThisBuild(Seq(
   version := "0.1.0-SNAPSHOT",
 
-  scalaVersion := "2.13.3",
+  scalaVersion := "2.13.5",
 
   Global / onChangedBuildSource := ReloadOnSourceChanges
 ))
 
 lazy val commonSettings = Seq(
-  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full),
 
   resolvers ++=
     ("jitpack" at "https://jitpack.io") ::
@@ -23,7 +23,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= CrossVersion.partialVersion(scalaVersion.value).map(v =>
     allOptionsForVersion(s"${v._1}.${v._2}", true)
   ).getOrElse(Nil),
-  scalacOptions in (Compile, console) ~= (_.diff(badConsoleFlags))
+  console / scalacOptions ~= (_.diff(badConsoleFlags))
 )
 
 lazy val jsSettings = Seq(
@@ -38,15 +38,15 @@ lazy val localeSettings = Seq(
 lazy val webSettings = Seq(
   scalaJSUseMainModuleInitializer := true,
   scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
-  requireJsDomEnv in Test := true,
-  version in webpack := "4.43.0",
-  version in startWebpackDevServer := "3.11.0",
+  Test / requireJsDomEnv := true,
+  webpack / version := "4.43.0",
+  startWebpackDevServer / version := "3.11.0",
   webpackDevServerExtraArgs := Seq("--progress", "--color"),
   webpackDevServerPort := 12345,
-  webpackBundlingMode in fastOptJS := BundlingMode.LibraryOnly(),
-  webpackConfigFile in fastOptJS := Some(baseDirectory.value / "webpack.config.dev.js"),
-  webpackConfigFile in fullOptJS := Some(baseDirectory.value / "webpack.config.prod.js"),
-  npmDevDependencies in Compile ++= NpmDeps.webpackDependencies,
+  fastOptJS / webpackBundlingMode := BundlingMode.LibraryOnly(),
+  fastOptJS / webpackConfigFile := Some(baseDirectory.value / "webpack.config.dev.js"),
+  fullOptJS / webpackConfigFile := Some(baseDirectory.value / "webpack.config.prod.js"),
+  Compile / npmDevDependencies ++= NpmDeps.webpackDependencies,
 )
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
@@ -122,7 +122,7 @@ lazy val lambdaApi = project
     // The aws-sdk is provided in lambda environment.
     // Not depending on it explicitly makes the bundle size smaller.
     // But we do not know whether our facades are on the correct version.
-    /* npmDependencies in Compile ++= */
+    /* Compile / npmDependencies ++= */
     /*   NpmDeps.awsSdk :: */
     /*   Nil */
   )
@@ -149,7 +149,7 @@ lazy val webClient = project
       Deps.awsSdkJS.cognitoidentity.value ::
       Nil,
 
-    npmDependencies in Compile ++=
+    Compile / npmDependencies ++=
       NpmDeps.awsSdk ::
       NpmDeps.aws4 ::
       Nil
@@ -158,7 +158,7 @@ lazy val webClient = project
 lazy val root = project
   .in(file("."))
   .settings(
-    skip in publish := true,
+    publish / skip := true,
   )
   .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, lambdaApi, webClient)
 

@@ -1,4 +1,4 @@
-package fun.web.client.aws
+package fun.lambda.api.aws
 
 import chameleon.{Serializer, Deserializer}
 import cats.implicits._
