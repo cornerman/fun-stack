@@ -17,6 +17,7 @@ object Handler {
       deserializer: Deserializer[ClientMessage[T], String],
       serializer: Serializer[ServerMessage[T, Event, Failure], String],
   ) = {
+    println(js.JSON.stringify(event))
     val router = routerF(Router[T, F])
     val result: js.Promise[ServerMessage[T, Event, Failure]] = Deserializer[ClientMessage[T], String].deserialize(event.body) match {
       case Left(error) => js.Promise.reject(new Exception(s"Deserializer: $error"))
@@ -37,5 +38,9 @@ object Handler {
           APIGatewayProxyStructuredResultV2,
         ]): js.UndefOr[js.Function1[Any, APIGatewayProxyStructuredResultV2]],
       )
+      .`then`[APIGatewayProxyStructuredResultV2]({ (result: APIGatewayProxyStructuredResultV2) =>
+        println(js.JSON.stringify(result))
+        result: APIGatewayProxyStructuredResultV2
+      }: js.Function1[APIGatewayProxyStructuredResultV2, APIGatewayProxyStructuredResultV2])
   }
 }

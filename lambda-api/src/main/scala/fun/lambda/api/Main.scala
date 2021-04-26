@@ -19,10 +19,10 @@ object Main {
   def handler(event: APIGatewayWSEvent, context: Context): js.Promise[APIGatewayProxyStructuredResultV2] = {
     import scala.scalajs.js.JSConverters._
     import scala.concurrent.ExecutionContext.Implicits.global
-    Handler.handle[ByteBuffer, String, ApiError, ApiResult](
-      _.route(ApiLive),
+    Handler.handle[ByteBuffer, String, String, ApiResult](
+      _.route[Api[ApiResult]](ApiLive),
       event,
-      x => Runtime.default.unsafeRunToFuture(x.either.provideCustomLayer(cachedAppLayer)).toJSPromise,
+      x => Runtime.default.unsafeRunToFuture(x.mapError(_.toString).either.provideCustomLayer(cachedAppLayer)).toJSPromise,
     )
   }
 
