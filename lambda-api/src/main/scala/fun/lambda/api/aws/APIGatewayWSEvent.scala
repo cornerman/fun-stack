@@ -1,4 +1,4 @@
-package fun.lambda.api
+package fun.lambda.api.aws
 
 import scala.scalajs.js
 import net.exoego.facade.aws_lambda._
