@@ -2,29 +2,25 @@ package fun.lambda.api
 
 import fun.api.Api
 
-import net.exoego.facade.aws_lambda._
 import zio._
-import fun.lambda.api.aws._
+import zio.interop.catz.core._
+import funstack.lambda.Handler
 import java.nio.ByteBuffer
+import scala.scalajs.js
+
 import boopickle.Default._
 import chameleon.ext.boopickle._
-import fun.lambda.api.aws.Base64Serdes._
-import zio.interop.catz._
-
-import scala.scalajs.js
+import funstack.core.Base64Serdes._
 
 object Main {
 
+  val router = sloth.Router[ByteBuffer, ApiResult].route[Api[ApiResult]](ApiLive)
+
   @js.annotation.JSExportTopLevel("handler")
-  def handler(event: APIGatewayWSEvent, context: Context): js.Promise[APIGatewayProxyStructuredResultV2] = {
-    import scala.scalajs.js.JSConverters._
-    import scala.concurrent.ExecutionContext.Implicits.global
-    Handler.handle[ByteBuffer, String, String, ApiResult](
-      _.route[Api[ApiResult]](ApiLive),
-      event,
-      x => Runtime.default.unsafeRunToFuture(x.mapError(_.toString).either.provideCustomLayer(cachedAppLayer)).toJSPromise,
-    )
-  }
+  val handler = Handler.handle[ByteBuffer, String, String, ApiResult](
+    router,
+    x => Runtime.default.unsafeRunToFuture(x.mapError(_.toString).either.provideCustomLayer(cachedAppLayer)),
+  )
 
   val appLayer =
     ZLayer.fromEffect[Any, Nothing, Database](DatabaseLive.create)

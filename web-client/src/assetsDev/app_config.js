@@ -6,5 +6,6 @@ window.AppConfig = {
   "clientIdAuth": "1nbobjdels6gkb4h10jpl37ilc",
   "region": "eu-central-1",
   "identityPoolId": "eu-central-1:08e04fba-3efd-426f-b28e-3c25953323bb",
-  "cognitoEndpoint": "cognito-idp.eu-central-1.amazonaws.com/eu-central-1_aShyiSAoM"
+  "cognitoEndpoint": "cognito-idp.eu-central-1.amazonaws.com/eu-central-1_aShyiSAoM",
+  "allowUnauthenticated": true
 };

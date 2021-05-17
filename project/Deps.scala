@@ -37,6 +37,13 @@ object Deps {
     val zio     = dep("com.github.cornerman.outwatch" %%% "outwatch-zio" % version)
   }
 
+  // fun-stack
+  val funstack = new {
+    val version = "6fe7c09"
+    val web     = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-web" % version)
+    val lambda  = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-lambda" % version)
+  }
+
   // websocket connecitivity
   val mycelium = new {
     val version  = "2a7a14c"

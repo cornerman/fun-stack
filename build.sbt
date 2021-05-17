@@ -111,20 +111,11 @@ lazy val lambdaApi = project
       Deps.cats.effect.value ::
       "dev.zio" %%% "zio" % "1.0.1" ::
       "dev.zio" %%% "zio-interop-cats" % "2.1.4.0" ::
+      Deps.funstack.lambda.value ::
+      "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
       Deps.boopickle.value ::
       Deps.mycelium.core.value ::
-      "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
-      Deps.base64.value ::
-      Deps.awsSdkJS.lambda.value ::
-      Deps.awsLambdaJS.value ::
       Nil,
-
-    // The aws-sdk is provided in lambda environment.
-    // Not depending on it explicitly makes the bundle size smaller.
-    // But we do not know whether our facades are on the correct version.
-    /* Compile / npmDependencies ++= */
-    /*   NpmDeps.awsSdk :: */
-    /*   Nil */
   )
 
 lazy val webClient = project
@@ -137,22 +128,15 @@ lazy val webClient = project
       Deps.sloth.value ::
       /* Deps.zio.core.value :: */
       "dev.zio" %%% "zio" % "1.0.1" ::
+      Deps.funstack.web.value ::
+      "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
       Deps.boopickle.value ::
       Deps.jsrequests.value ::
       Deps.cuid.value ::
       Deps.outwatch.core.value ::
       Deps.outwatch.zio.value ::
       Deps.mycelium.clientJs.value ::
-      "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
-      Deps.base64.value ::
-      Deps.awsSdkJS.sts.value ::
-      Deps.awsSdkJS.cognitoidentity.value ::
       Nil,
-
-    Compile / npmDependencies ++=
-      NpmDeps.awsSdk ::
-      NpmDeps.aws4 ::
-      Nil
   )
 
 lazy val root = project

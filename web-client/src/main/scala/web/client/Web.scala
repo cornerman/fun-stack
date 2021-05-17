@@ -1,7 +1,7 @@
 package fun.web.client
 
 import fun.web.client.data._
-import fun.web.client.aws.Fun
+import funstack.web.Fun
 
 import colibri._
 import outwatch._

@@ -1,7 +1,7 @@
 package fun.web.client
 
 import fun.web.client.data._
-import fun.web.client.aws._
+import funstack.web._
 
 import zio._
 import zio.console._
@@ -13,8 +13,6 @@ import outwatch.{Outwatch, EventDispatcher}
 import org.scalajs.dom
 
 object Main extends App {
-
-  dom.console.log("AppConfig", AppConfig)
 
   def run(args: List[String]) =
     appLogic

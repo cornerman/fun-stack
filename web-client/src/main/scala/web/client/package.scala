@@ -2,7 +2,6 @@ package fun.web
 
 import fun.api.Api
 import fun.web.client.data._
-import fun.web.client.aws.Auth
 
 import colibri.Observable
 import outwatch.{ModifierM, EventDispatcher}
