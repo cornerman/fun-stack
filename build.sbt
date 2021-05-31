@@ -1,4 +1,3 @@
-import Options._
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 inThisBuild(Seq(
@@ -20,15 +19,13 @@ lazy val commonSettings = Seq(
     "org.scalatest" %%% "scalatest" % "3.2.0" % Test ::
     Nil,
 
-  scalacOptions ++= CrossVersion.partialVersion(scalaVersion.value).map(v =>
-    allOptionsForVersion(s"${v._1}.${v._2}", true)
-  ).getOrElse(Nil),
-  console / scalacOptions ~= (_.diff(badConsoleFlags))
+  scalacOptions --= Seq("-Xfatal-warnings"),
 )
 
 lazy val jsSettings = Seq(
   useYarn := true,
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
+  Compile / npmDevDependencies += NpmDeps.funpack
 )
 
 lazy val localeSettings = Seq(
@@ -37,7 +34,7 @@ lazy val localeSettings = Seq(
 
 lazy val webSettings = Seq(
   scalaJSUseMainModuleInitializer := true,
-  scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) },
+  /* scalaJSLinkerConfig ~= { _.withESFeatures(_.withUseECMAScript2015(false)) }, */
   Test / requireJsDomEnv := true,
   webpack / version := "4.43.0",
   startWebpackDevServer / version := "3.11.0",
@@ -46,7 +43,6 @@ lazy val webSettings = Seq(
   fastOptJS / webpackBundlingMode := BundlingMode.LibraryOnly(),
   fastOptJS / webpackConfigFile := Some(baseDirectory.value / "webpack.config.dev.js"),
   fullOptJS / webpackConfigFile := Some(baseDirectory.value / "webpack.config.prod.js"),
-  Compile / npmDevDependencies ++= NpmDeps.webpackDependencies,
 )
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
@@ -104,6 +100,11 @@ lazy val lambdaApi = project
   .in(file("lambda-api"))
   .settings(commonSettings, jsSettings, localeSettings)
   .settings(
+    webpackEmitSourceMaps in fullOptJS := false,
+    webpackConfigFile in fullOptJS := Some(
+      baseDirectory.value / "webpack.config.prod.js",
+    ),
+
     libraryDependencies ++=
       Deps.sloth.value ::
       /* Deps.zio.core.value :: */
@@ -138,14 +139,6 @@ lazy val webClient = project
       Deps.mycelium.clientJs.value ::
       Nil,
   )
-
-lazy val root = project
-  .in(file("."))
-  .settings(
-    publish / skip := true,
-  )
-  .aggregate(api.js, api.jvm, eventData, eventPersistency, eventDistributor, webApi, lambdaApi, webClient)
-
 
 addCommandAlias("dev", "devInit; devWatchClient; devDestroy")
 addCommandAlias("devInit", "webClient/fastOptJS::webpack; webClient/fastOptJS::startWebpackDevServer")

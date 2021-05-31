@@ -9,3 +9,6 @@ addSbtPlugin("io.github.cquiroz" % "sbt-tzdb" % "0.3.1")
 
 // fast restart
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
+
+// sane scalac options
+addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.19")

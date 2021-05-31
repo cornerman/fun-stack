@@ -1,11 +1,11 @@
 module "fun" {
   source = "github.com/cornerman/fun-stack-tf?ref=master"
 
-  domain = "funstack.net"
-  # catch_all_forward_to = "johannes@karoff.net"
+  domain               = "funstack.net"
+  catch_all_forward_to = "johannes@karoff.net"
 
   website = {
-    source_dir = "../web-client/target/scala-2.13/scalajs-bundler/main/prod/"
+    source_dir = "../web-client/target/scala-2.13/scalajs-bundler/main/dist/"
   }
 
   api = {
@@ -30,6 +30,5 @@ module "fun" {
 
   dev_setup = {
     local_website_url = "http://localhost:12345"
-    config_output_dir = "../web-client/src/assetsDev/"
   }
 }

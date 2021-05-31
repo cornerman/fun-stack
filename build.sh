@@ -2,4 +2,4 @@
 
 cd "$(dirname $0)"
 
-sbt webClient/fullOptJS::webpack lambdaApi/fullOptJS
+sbt webClient/fullOptJS::webpack lambdaApi/fullOptJS::webpack

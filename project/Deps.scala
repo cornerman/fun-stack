@@ -39,7 +39,7 @@ object Deps {
 
   // fun-stack
   val funstack = new {
-    val version = "bdf1b52"
+    val version = "eeee388"
     val web     = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-web" % version)
     val lambda  = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-lambda" % version)
   }
@@ -71,8 +71,5 @@ object NpmDeps {
   val awsSdk        = "aws-sdk" -> awsSdkVersion
   val aws4          = "aws4"    -> "1.11.0"
 
-  val webpackDependencies =
-    "copy-webpack-plugin"    -> "5.0.0" ::
-      "clean-webpack-plugin" -> "1.0.1" ::
-      Nil
+  val funpack = "fun-pack" -> "git://github.com/fun-stack-org/fun-pack#c51221a"
 }
