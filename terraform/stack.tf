@@ -1,5 +1,5 @@
 module "fun" {
-  source = "github.com/cornerman/fun-stack-tf?ref=modules"
+  source = "github.com/cornerman/fun-stack-tf?ref=master"
 
   domain = "funstack.net"
   # catch_all_forward_to = "johannes@karoff.net"
@@ -21,15 +21,15 @@ module "fun" {
   }
 
   budget = {
-    limit_dollar = 1.0
-    notify_email = "johannes@karoff.net"
+    limit_monthly_dollar = "1.0"
+    notify_email         = "johannes@karoff.net"
   }
 
-  # prod_workspace = "default"
-  # dev_workspaces = ["dev"]
+  prod_workspace = "default"
+  dev_workspaces = ["dev"]
 
-  # dev_setup = {
-  #   local_website_url = "http://localhost:12345"
-  #   config_output_dir = "../web-client/src/assetsDev/"
-  # }
+  dev_setup = {
+    local_website_url = "http://localhost:12345"
+    config_output_dir = "../web-client/src/assetsDev/"
+  }
 }

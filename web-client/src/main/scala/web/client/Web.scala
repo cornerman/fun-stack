@@ -78,13 +78,15 @@ object Component {
     )
   }
 
-  val login = div(
-    ModifierM.access[WebEnv] { env =>
-      Fun.auth.currentUser.map {
-        case Some(user) => button(s"Logout (${user.info.email})", onClick.doAsync(Fun.auth.logout))
-        case None       => button("Login", onClick.doAsync(Fun.auth.login))
-      }
-    },
+  val login: ModifierM[WebEnv] = Fun.auth.map(auth =>
+    div(
+      ModifierM.access[WebEnv] { env =>
+        auth.currentUser.map {
+          case Some(user) => button(s"Logout (${user.info.email})", onClick.doAsync(auth.logout))
+          case None       => button("Login", onClick.doAsync(auth.login))
+        }
+      },
+    ),
   )
 
   val apiInteraction: ModifierM[WebEnv] = div(

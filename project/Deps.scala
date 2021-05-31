@@ -39,7 +39,7 @@ object Deps {
 
   // fun-stack
   val funstack = new {
-    val version = "6fe7c09"
+    val version = "bdf1b52"
     val web     = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-web" % version)
     val lambda  = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-lambda" % version)
   }

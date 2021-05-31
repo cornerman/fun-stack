@@ -16,7 +16,7 @@ import funstack.core.Base64Serdes._
 
 object WsClient {
 
-  private val client = Fun.api.wsClient[ByteBuffer, IO]
+  private val client = Fun.api.map(_.wsClient[ByteBuffer, IO])
 
-  val api = client.wire[Api[IO]]
+  val api = client.map(_.wire[Api[IO]])
 }

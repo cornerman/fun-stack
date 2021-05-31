@@ -27,8 +27,8 @@ object Main extends App {
 
   private val appLayer =
     ZLayer.fromEffectMany(config) ++
-      ZLayer.succeed[Api_](WsClient.api) ++
-      ZLayer.succeed[Platform](Platform.default)
+      ZLayer.fromEffect(Task.fromEither(WsClient.api.toRight(new Exception("No Api defined")))) ++
+      ZLayer.succeed(Platform.default)
 
   private val render = ZIO.accessM[WebEnv] { env =>
     Outwatch.renderInto[Task]("#app", Component.root.provide(env))
