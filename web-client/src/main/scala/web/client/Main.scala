@@ -13,7 +13,6 @@ import outwatch.{Outwatch, EventDispatcher}
 import org.scalajs.dom
 
 object Main extends App {
-
   def run(args: List[String]) =
     appLogic
       .provideCustomLayer(appLayer)

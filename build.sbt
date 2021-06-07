@@ -25,6 +25,7 @@ lazy val commonSettings = Seq(
 lazy val jsSettings = Seq(
   useYarn := true,
   scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) },
+  scalaJSLinkerConfig ~= { _.withOptimizer(false) },
   Compile / npmDevDependencies += NpmDeps.funpack
 )
 
@@ -49,6 +50,21 @@ lazy val api = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("api"))
   .settings(commonSettings)
+
+lazy val apiHttp = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("api-http"))
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++=
+      Deps.cats.effect.value ::
+      Deps.awsLambdaJS.value ::
+      "com.softwaremill.sttp.tapir" %%% "tapir-core" % "0.18.0-M15" ::
+      "com.softwaremill.sttp.tapir" %%% "tapir-json-circe" % "0.18.0-M15" ::
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % "0.18.0-M15" ::
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % "0.18.0-M15" ::
+      Nil
+  )
 
 lazy val eventData = project
   .in(file("event-data"))
@@ -116,6 +132,22 @@ lazy val lambdaApi = project
       "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
       Deps.boopickle.value ::
       Deps.mycelium.core.value ::
+      Nil,
+  )
+
+lazy val lambdaHttp = project
+  .enablePlugins(ScalaJSPlugin, ScalaJSBundlerPlugin) //, LocalesPlugin, TzdbPlugin)
+  .dependsOn(apiHttp.js)
+  .in(file("lambda-http"))
+  .settings(commonSettings, jsSettings, localeSettings)
+  .settings(
+    webpackEmitSourceMaps in fullOptJS := false,
+    webpackConfigFile in fullOptJS := Some(
+      baseDirectory.value / "webpack.config.prod.js",
+    ),
+
+    libraryDependencies ++=
+      /* Deps.funstack.lambdaHttp.value :: */
       Nil,
   )
 

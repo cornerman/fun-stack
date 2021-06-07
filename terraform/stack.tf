@@ -1,5 +1,5 @@
 module "fun" {
-  source = "github.com/cornerman/fun-stack-tf?ref=master"
+  source = "github.com/cornerman/fun-stack-tf?ref=http"
 
   domain               = "funstack.net"
   catch_all_forward_to = "johannes@karoff.net"
@@ -15,6 +15,16 @@ module "fun" {
     timeout               = 30
     memory_size           = 256
     allow_unauthenticated = true
+    environment           = {}
+  }
+
+  http = {
+    source_dir        = "../lambda-http/target/scala-2.13/scalajs-bundler/main/"
+    handler           = "lambdahttp-opt.handler"
+    runtime           = "nodejs14.x"
+    timeout           = 30
+    memory_size       = 256
+    swagger_yaml_file = "../swagger-api.yaml"
   }
 
   auth = {
