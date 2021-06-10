@@ -39,9 +39,10 @@ object Deps {
 
   // fun-stack
   val funstack = new {
-    val version = "eeee388"
-    val web     = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-web" % version)
-    val lambda  = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-lambda" % version)
+    val version    = "fc6a023"
+    val web        = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-web" % version)
+    val lambdaWs   = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-lambda-ws" % version)
+    val lambdaHttp = dep("com.github.cornerman.fun-stack-scala" %%% "fun-stack-lambda-http" % version)
   }
 
   // websocket connecitivity

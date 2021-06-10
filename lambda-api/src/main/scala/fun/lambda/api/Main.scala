@@ -4,7 +4,7 @@ import fun.api.Api
 
 import zio._
 import zio.interop.catz.core._
-import funstack.lambda.Handler
+import funstack.lambda.ws.Handler
 import java.nio.ByteBuffer
 import scala.scalajs.js
 

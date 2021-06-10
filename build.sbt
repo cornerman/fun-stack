@@ -128,7 +128,7 @@ lazy val lambdaApi = project
       Deps.cats.effect.value ::
       "dev.zio" %%% "zio" % "1.0.1" ::
       "dev.zio" %%% "zio-interop-cats" % "2.1.4.0" ::
-      Deps.funstack.lambda.value ::
+      Deps.funstack.lambdaWs.value ::
       "com.github.cornerman.chameleon" %%% "chameleon" % "01426c2" ::
       Deps.boopickle.value ::
       Deps.mycelium.core.value ::
@@ -147,7 +147,7 @@ lazy val lambdaHttp = project
     ),
 
     libraryDependencies ++=
-      /* Deps.funstack.lambdaHttp.value :: */
+      Deps.funstack.lambdaHttp.value ::
       Nil,
   )
 
